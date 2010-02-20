@@ -12,7 +12,7 @@
 
 var _Doc = document, 
 _loaded = {},
-_isArray = function (e) { return typeof e === 'object' && e.length; },
+_isArray = function (e) { return e.constructor === Array; },
 
 _log = function (e) {
 	if (window.console && window.console.log){
