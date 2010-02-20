@@ -228,7 +228,7 @@ _load(_config.core_lib[0], 'js');
 
 
 this.Do = function(){
-	var args = Array.slice.call(null, arguments), 
+	var args = Array.prototype.slice.call(arguments, 0), 
 	thread = new _queue(_calculate(_config.core_lib.concat(args)));
 	thread.start();
 };
