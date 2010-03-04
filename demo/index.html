@@ -122,6 +122,7 @@
 	Do.add('lightBox', {path: 'http://leandrovieira.com/projects/jquery/lightbox/js/jquery.lightbox-0.4.js', type: 'js', requires: ['lightBox-css']});
 	
 	Do('lightBox', function(){
+		$(document).ready(function(){
 		$('#demo3 a').lightBox({
 			imageLoading:			'../assets/lightbox-ico-loading.gif',
 			imageBtnPrev:			'../assets/lightbox-btn-prev.gif',
@@ -129,6 +130,8 @@
 			imageBtnClose:			'../assets/lightbox-btn-close.gif',
 			imageBlank:				'../assets/lightbox-blank.gif'
 		});
+		
+	  });
 	});
 	
 	</script>
