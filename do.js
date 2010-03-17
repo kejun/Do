@@ -24,7 +24,7 @@ _log = function (e) {
 //内部配置文件
 _config = {
     //核心库，可以任意换
-    core_lib: ['http://code.jquery.com/jquery-1.4.2.js'],
+    core_lib: ['http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js'],
     
     //模块依赖
     mods: {}
