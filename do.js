@@ -24,13 +24,15 @@ _log = function (e) {
 //内部配置文件
 _config = {
     //核心库，可以任意换
-    core_lib: ['http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js'],
+    core_lib: ['http://t.douban.com/js/jquery1.4.2.min.js'],
     
     //模块依赖
     mods: {}
 },
 
 _loading_queue = {},
+
+_file = _Doc.getElementsByTagName('script')[0],
 
 // load external js or css.
 _load = function (url, type, charset, cb) {
@@ -73,7 +75,7 @@ _load = function (url, type, charset, cb) {
     }
     
     if (t === 'css') {
-      _Doc.getElementsByTagName('head')[0].appendChild(n);
+      _file.parentNode.insertBefore(n, _file);
       if (cb) {
         cb(url);
       }
@@ -93,7 +95,7 @@ _load = function (url, type, charset, cb) {
         }
     };
     
-    _Doc.getElementsByTagName('head')[0].appendChild(n);
+    _file.parentNode.insertBefore(n, _file);
 },
 
 _calculate = function(e) {
