@@ -1,0 +1,84 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+</head>
+<body>
+
+	<script type="text/javascript">
+var _config = {
+mods: {
+A: { },
+B: { },
+C: { requires: ['A', 'E'] },
+D: { },
+E: { requires: ['F', 'A'] },
+F: { },
+G: { },
+H: { },
+I: { },
+J: { },
+K: { },
+L: { }
+}
+
+};	
+
+var _isArray = function (e) { return e.constructor === Array; };
+
+var _calculate = function(e) {
+    if (!e || !_isArray(e) ) {
+        return;
+    }
+    
+    var i = 0, 
+    item, 
+    result = [], 
+    mods = _config.mods,
+    depeList = [],
+    hasAdded = {},
+    getDepeList = function (e) {
+        var i = 0, m, reqs;
+        
+        // break loop require.
+        if (hasAdded[e]) {
+            return depeList;
+        }   
+        hasAdded[e] = true;
+        
+        if (mods[e].requires) {
+            reqs = mods[e].requires;
+            for (; m = reqs[i++];) {
+              // is a module.
+              if (mods[m]) {
+                getDepeList(m);
+                depeList.push(m);
+               } else {
+                // is a file.
+                depeList.push(m);
+               }
+            }
+            return depeList;
+        }
+        return depeList;
+    };
+    
+    for (; item = e[i++]; ) {
+        if (mods[item] && mods[item].requires && mods[item].requires[0]) {
+            depeList = [];
+            hasAdded = {};
+            result = result.concat(getDepeList(item));
+        }
+        result.push(item);
+    }
+    
+    return result;
+};
+
+
+console.log(_calculate(['A', 'C', 'H'])); //A,A,F,A,E,C,H
+
+	</script>
+</body>
+</html>
