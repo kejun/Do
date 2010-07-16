@@ -1,12 +1,3 @@
-/**
- * Do 是一个轻量级javascript开发框架。
- * Do设计原则上不提供与具体的业务逻辑相关的功能。
- * 主要解决模块的依赖关系和异步加载。保持足够轻量。
- * 它的核心库可以自由更换。目前是jQuery，也可以多个。
- * @author Kejun (listenpro@gmail.com)
- * @version 0.1.1
- */
-
 (function(){
 
 var _Doc = document, 
@@ -29,7 +20,7 @@ _log = function (e) {
 // 内部配置文件
 _config = {
     //核心库
-    core_lib: ['http://t.douban.com/js/jquery1.4.2.min.js'],
+    core_lib: ['http://t.douban.com/js/jquery.min.js'],
     
     //模块依赖
     //{ moduleName: {path: 'URL', type:'js|css', requires:['moduleName1', 'fileURL']} }
@@ -40,7 +31,7 @@ _config = {
 _file = _Doc.getElementsByTagName('script')[0],
 
 // 加载js/css文件 
-_load = function (url, type, charset, cb) {
+_load = function (url, type, charset, cb, context) {
     if (!url) {
         return;
     }
@@ -48,7 +39,7 @@ _load = function (url, type, charset, cb) {
     if (_loaded[url]) {
         _loading_queue[url] = false;
         if (cb) {
-            cb(url);
+            cb(url, context);
         }
         return;
     }
@@ -57,8 +48,8 @@ _load = function (url, type, charset, cb) {
     // 当加载队列中再次出现此模块会再次加载，理论上会出现重复加载
     if (_loading_queue[url]) {
         setTimeout(function(){
-            _load(url, type, charset, cb);
-        }, 10);
+            _load(url, type, charset, cb, context);
+        }, 1);
         return;
     }
 
@@ -87,7 +78,7 @@ _load = function (url, type, charset, cb) {
     if (t === 'css') {
       _file.parentNode.insertBefore(n, _file);
       if (cb) {
-        cb(url);
+        cb(url, context);
       }
       return;
     }
@@ -98,9 +89,9 @@ _load = function (url, type, charset, cb) {
             _loaded[this.getAttribute('src')] = true;
             
             if (cb) {
-                cb(this.getAttribute('src'));
+                cb(this.getAttribute('src'), context);
             }
-            
+             
             n.onload = n.onreadystatechange = null;
         }
     };
@@ -166,17 +157,12 @@ _queue = function (e) {
     
     this.queue = e;
 
-    // 超时文件收集
-    this._skip = {};
-
     // 队列当前要加载的模块
     this.current = null;
 };
 
 _queue.prototype = {
 
-    _Timeout: 6000,
-    
     _interval: 10,
     
     start: function () {
@@ -188,63 +174,36 @@ _queue.prototype = {
             return;
         }
         
-        // 文件可能超时，加载前启动一个计时器
-        // 超时文件目前处理是踢出队列，这会引起后面有依懒关系的程序出错。所以会将超时文件输出到console里
-        this._outTimer = setTimeout(function () {
-          _log('[DoubanJS] "' + o.current + '" timeout.');
-          o._skip[o.current] = true; 
-          o.start(); 
-        }, this._Timeout);
-        
         this.run();
     },
     
     run: function () {
-        var o = this, mod;
+        var o = this, mod, currentMod = this.current;
         
-        if (typeof this.current === 'function') {
-            this.clearTimer();
-            // 立即执行此Function
-            this.current();
+        if (typeof currentMod === 'function') {
+            currentMod();
             this.start();
             return;
-        } else if (typeof this.current === 'string') {
-            if (_config.mods[this.current]) {
-              mod = _config.mods[this.current];
+        } else if (typeof currentMod === 'string') {
+            if (_config.mods[currentMod]) {
+              mod = _config.mods[currentMod];
               _load(mod.path, mod.type, mod.charset, function (e) {
-                 // if timeout file fire callback don't disturb queue.
-                 if (!o._skip[e]) {
-                   o.clearTimer();
-                   o.start();
-                 }
-              });
-            } else if (/\.js|\.css/i.test(this.current)) {
+                 o.start();
+              }, o);
+            } else if (/\.js|\.css/i.test(currentMod)) {
               // load a file.
-              _load(this.current, '', '', function (e) {
-                 // if timeout file fire callback don't disturb queue.
-                 if (!o._skip[e]) {
-                   o.clearTimer();
-                   o.start();
-                 }
-              }); 
+              _load(currentMod, '', '', function (e, o) {
+                 o.start();
+              }, o); 
             } else {
               // no found module. skip to next
-              this.clearTimer();
               this.start();
            }
         }
     },
     
-    clearTimer: function () {
-        clearTimeout(this._outTimer);
-    },
-    
     next: function () { return this.queue.shift(); }
 };
-
-
-// 预加载核心库.
-_load(_config.core_lib[0], 'js');
 
 
 this.Do = function(){
@@ -259,5 +218,7 @@ this.Do.add = function(sName, oConfig) {
     }
     _config.mods[sName] = oConfig;
 };
+
+Do(_config.core_lib);
 
 })();
