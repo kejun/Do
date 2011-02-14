@@ -13,7 +13,7 @@
     </script>
     
     
-    <script type="text/javascript" src="../do.js?102"></script>
+    <script type="text/javascript" src="../do.js" data-cfg-autoload="true" data-cfg-corelib="http://img3.douban.com/js/packed_jquery.min2.js"></script>
     
     <style type="text/css">
         body { font:14px/1.8 arial,sans-serif; }
@@ -142,7 +142,16 @@
         
       });
     });
-    
+
+Do.delay(1000, function(){
+    Do.css('body{background-color:#999;}h2{color:blue}');
+});
+
+Do.delay(2000, function(){
+    Do.css('body{background-color:#ccc;}');
+});
+
+
     </script>
 </body>
 </html>

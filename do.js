@@ -1,3 +1,4 @@
+// version 1.0
 (function() {
 
 var _doc = document,
@@ -34,7 +35,7 @@ _config = {
 // 插入的参考结点
 _jsFiles = _doc.getElementsByTagName('script'),
 
-_jsSelf = _jsFiles[_jsFiles.length],
+_jsSelf = _jsFiles[_jsFiles.length - 1],
 
 _jsConfig,
 
@@ -44,6 +45,8 @@ _readyList = [],
 
 _isReady = false,
 
+// 全局模块
+_globalList = [],
 
 // 加载js/css文件
 _load = function(url, type, charset, cb, context) {
@@ -209,7 +212,7 @@ _bindReady = function() {
 
   if (_doc.addEventListener) {
     _doc.addEventListener('DOMContentLoaded', _onDOMContentLoaded, false);
-    _win.addEventListener('load', _ready);
+    _win.addEventListener('load', _ready, false);
   } else if (_doc.attachEvent) {
     _doc.attachEvent('onreadystatechange', _onDOMContentLoaded);
     _win.attachEvent('onload', _ready);
@@ -294,13 +297,17 @@ if (typeof _jsConfig === 'string') {
 
 _do = function() {
     var args = [].slice.call(arguments), thread;
+    if (_globalList.length > 0) {
+       args = _globalList.concat(args);
+    }
+
     if (_config.autoLoad) {
        args = _config.coreLib.concat(args);
     }
+
     thread = new _Queue(_calculate(args));
     thread.start();
 };
-
 
 _do.add = function(sName, oConfig) {
     if (!sName || !oConfig || !oConfig.path) {
@@ -309,12 +316,40 @@ _do.add = function(sName, oConfig) {
     _config.mods[sName] = oConfig;
 };
 
+_do.delay = function() {
+   var args = [].slice.call(arguments), delay = args.shift();
+   _win.setTimeout(function() {
+     _do.apply(this, args);
+   }, delay);
+};
+
+_do.global = function() {
+   var args = [].slice.call(arguments);
+   _globalList = _globalList.concat(args);
+};
+
 _do.ready = function() {
     var args = [].slice.call(arguments);
     if (_isReady) {
       return _do.apply(this, args);
     }
     _readyList = _readyList.concat(args);
+};
+
+_do.css = function(str) {
+ var css = _doc.getElementById('do-inline-css');
+ if (!css) {
+   css = _doc.createElement('style');
+   css.type = 'text/css';
+   css.id = 'do-inline-css';
+   _jsFiles[0].parentNode.insertBefore(css, _jsFiles[0]);
+ }
+
+ if (css.styleSheet) {
+   css.styleSheet.cssText = css.styleSheet.cssText + str;
+ } else {
+   css.appendChild(_doc.createTextNode(str));
+ }
 };
 
 if (_config.autoLoad) {
