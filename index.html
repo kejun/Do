@@ -1,0 +1,132 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+    <title></title>
+    <link type="text/css" rel="stylesheet" href="assets/shCore.css">
+    <link type="text/css" rel="stylesheet" href="assets/shThemeEclipse.css">
+    <script type="text/javascript" src="js/do.min.js" data-cfg-corelib="http://img3.douban.com/js/packed_jquery.min2.js"></script>
+    <style type="text/css">
+        body { font:14px/1.8 arial,sans-serif; }
+        h1 { font-size:18px;color:#666; }
+        h1 b{ margin-right:10px;font-size:64px;letter-spacing:-10px;color:#289942; }
+        h2 { font-size:16px;margin:0; }
+        img { border:0; }
+        .bd { margin:0 20px; }
+        .code { margin-bottom:2em; }
+        #demo3 a { display:inline-block;margin:0 1em;vertical-align:top; }
+    </style>
+</head>
+<body>
+    
+    <h1><b>Do</b>轻量级Javascript开发框架</h1>
+    
+    <div class="bd">
+        
+    <h2>使用方法: 只需要在head里引入do.js文件</h2>
+    
+        <div class="code">
+        <script type="syntaxhighlighter" class="brush:js">
+        <script src="../do.min.js">&lt;/script> (3.5k)
+        </script>
+        </div>  
+        
+    
+    <h2>Demo 1: 执行inline script</h2>
+    
+    <div id="demo1" class="mod">
+        <a href="#">Click Here.</a>
+    </div>
+    
+    <div class="code">
+    <script type="syntaxhighlighter" class="brush:js">
+    Do(function(){
+        $('#demo1 a').click(function(e){
+            e.preventDefault();
+            $(this).animate({fontSize: '24px', fontWeight: 800}, 1000).fadeOut(1000);
+        });
+    });
+    </script>
+    </div>
+    
+    
+    <h2>Demo 2: 依赖外部文件</h2>
+    <div id="demo2" class="mod">
+        <a href="#" title="鼠标悬浮这里会看到一个提示框">Mouseover Here.</a>
+    </div>
+    
+    <div class="code">
+    <script type="syntaxhighlighter" class="brush:js">
+    Do('js/tip.js', function(){
+        $('#demo2 a').simpleTip();
+    });
+    </script>
+    </div>
+    
+    <h2>Demo 3: 依赖模块方式</h2>
+    
+    <div id="demo3" class="mod">
+        <a href="http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg" title="痛仰"><img src="http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg" width="100" alt=""></a>
+        <a href="http://www.ray-ban.com/usa/images/assets/2646/2f75c4bad9553397c4db8c38286519e3.png?from=0x0&resize_to=800&size=2400x1400s" title="RB2156"><img src="http://www.ray-ban.com/usa/images/assets/2646/7ddd18333db027d0ca315317a0089c20.png?from=0x0&resize_to=145x145&size=2400x1400" alt=""></a>
+        <a href="http://images.apple.com/ipad/gallery/images/hardware-01-20100127.jpg" title="ipad gallery"><img src="http://images.apple.com/ipad/gallery/images/hardware-01t-20100127.png" alt=""></a>
+    </div>
+    
+    <div class="code">
+    <script type="syntaxhighlighter" class="brush:js">
+        // 添加模块
+        Do.add('lightBox-css', {path: '{URL}', type: 'css'});
+        Do.add('lightBox', {path: '{URL}', type: 'js', requires: ['lightBox-css']});
+
+        // 引用模块
+        Do('lightBox', function(){
+            $('#demo3 a').lightBox({
+                imageLoading:           '../assets/lightbox-ico-loading.gif',
+                imageBtnPrev:           '../assets/lightbox-btn-prev.gif',
+                imageBtnNext:           '../assets/lightbox-btn-next.gif',
+                imageBtnClose:          '../assets/lightbox-btn-close.gif',
+                imageBlank:             '../assets/lightbox-blank.gif'
+            });
+        });
+    </script>
+    </div>
+    
+    <script type="text/javascript" src="assets/shCore.js"></script>
+    <script type="text/javascript" src="assets/shBrushJScript.js"></script>
+
+
+    <script type="text/javascript">
+
+    SyntaxHighlighter.all();
+    
+    // demo code.
+    Do(function(){
+        $('#demo1 a').click(function(e){
+            e.preventDefault();
+            $(this).animate({fontSize: '24px', fontWeight: 800}, 1000).fadeOut(1000);
+        });
+    });
+    
+    Do('js/tip.js', function(){
+        $('#demo2 a').simpleTip();
+    });
+    
+    
+    Do.add('lightBox-css', {path: 'http://leandrovieira.com/projects/jquery/lightbox/css/jquery.lightbox-0.4.css', type: 'css'});
+    Do.add('lightBox', {path: 'http://leandrovieira.com/projects/jquery/lightbox/js/jquery.lightbox-0.4.js', type: 'js', requires: ['lightBox-css']});
+    
+    Do('lightBox', function(){
+        $(document).ready(function(){
+        $('#demo3 a').lightBox({
+            imageLoading:           'assets/lightbox-ico-loading.gif',
+            imageBtnPrev:           'assets/lightbox-btn-prev.gif',
+            imageBtnNext:           'assets/lightbox-btn-next.gif',
+            imageBtnClose:          'assets/lightbox-btn-close.gif',
+            imageBlank:             'assets/lightbox-blank.gif'
+        });
+        
+      });
+    });
+
+    </script>
+</body>
+</html>
