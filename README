@@ -1,26 +1,8 @@
-   ::::::.
-   ::    ::
-   ::    ::  :::::::
-   ::    ::  ::   ::
-   ::    ::  ::   ::
-   ::::::'   ::::::: :: 轻量级Javascript开发框架
+  ________       
+	___  __ \_____ 
+	__  / / /  __ \
+	_  /_/ // /_/ /
+	/_____/ \____/ v 1.0 轻量级Javascript开发框架
 
-   使用方法：只需要在head里引入do.js文件
-   
-   <script type="text/javascript" src="js/do.js"></script>
-   
-   <!--
-
-   源代码：http://github.com/kejun/Do
-   许可证：暂缺
-   网  站：http://hikejun.com/
-
-   -->
-
-   /* 2010-09-04 */
-
-   //核心库是jQuery
-   
-
-
+使用方法见： http://kejun.github.com/Do/
 
