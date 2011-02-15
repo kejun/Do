@@ -67,8 +67,8 @@
     
     <div id="demo3" class="mod">
         <a href="http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg" title="痛仰"><img src="http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg" width="100" alt=""></a>
-        <a href="http://thatsenuff.com/wp-content/uploads/2010/12/jay-z-eminem1-1024x912.jpg" title="RB2156"><img src="http://t0.gstatic.com/images?q=tbn:ANd9GcRxps4QUrmTZLnYzZiYfXH4n2E5qwvli2le9VTx3eBLzFYX24q4lA" width="100" alt=""></a>
-        <a href="http://img1.moko.cc/users/0/50/15131/post/89/img1_src_1427285.jpg" title="更纯粹越野！ATV越野"><img src="http://img1.moko.cc/users/0/50/15131/post/b4/img1_cover_1427383.jpg" width="100" alt=""></a>
+        <a href="http://l.yimg.com/k/im_siggnQGSdr0VqjCQpC.ABw.gYw---y526-x620-q75-n1/ygrammys/us/img/65/17/1876714805_13050152561.jpg" title="RB2156"><img src="http://l.yimg.com/k/im_siggj2toHESF0YSrOK.01_cV7g---x75-xc1-yc1-wc500-hc500-q75-n0/ygrammys/us/img/65/17/1876714805_13050152561.jpg" alt="Nominees: Best Rock Album"></a>
+        <a href="http://l.yimg.com/k/im_siggDVgPxPixvlQV4MVirM_uYg---y526-x620-q75-n0/ygrammys/us/img/6f/ff/2250599110_2821831301.jpg" title="RB2156"><img src="http://l.yimg.com/k/im_sigg.sEc0qmHe3anrdn1at7Ayw---x75-xc1-yc1-wc500-hc500-q75-n0/ygrammys/us/img/6f/ff/2250599110_2821831301.jpg" alt="Nominees: Best Alternative Music Album"></a>
     </div>
     
     <div class="code">
@@ -89,6 +89,68 @@
         });
     </script>
     </div>
+
+
+    <h2>Demo 4: 在DOMReay执行</h2>
+    
+    <div class="code">
+    如果要确保顺利操作页面上的任意结点，最好使用ready方法，让队列在DOMReady后执行，当然这样会比直接用Do延后一些执行。
+    <script type="syntaxhighlighter" class="brush:js">
+    Do.ready('dialog', function() {
+        var dlg = dui.Dialog({
+             content: 'hi, 在ready触发队列执行是一种更稳妥的选择. <pre>  Do.ready(your queue...)</pre>', 
+             buttons: ['confirm'],
+             width: 400
+        }).open();
+        setTimeout(function(){
+          dlg.update();
+        }, 0);
+    });
+    </script>
+    </div>
+
+  
+    <h2>Demo 5: Delay执行</h2>
+    
+    <div class="code">
+    有些JS不那么着急执行，不妨delay一段时间后再执行。比如：预加载一些东西。
+    <script type="syntaxhighlighter" class="brush:js">
+    Do.delay(2000, function() {
+      (new Image()).src = 'URL';
+      (new Image()).src = 'URL';
+      (new Image()).src = 'URL';
+    });
+    </script>
+    </div>
+      
+
+
+  
+    <h2>Demo 6: 附件组件特殊的CSS</h2>
+    
+    <div class="code">
+      虽然不鼓励这么干，但有些时候的确有这样的需求。
+    <script type="syntaxhighlighter" class="brush:js">
+    Do.css([
+        '.dui-dialog .hd h3 { margin:0; }',
+        '.dui-dialog-close:link { text-decoration:none; }'
+    ].join(''));
+    </script>
+    </div>
+      
+
+    <h2>Demo 7: 声明全局模块</h2>
+    
+    <div class="code">
+    声明了全局模块，后面的队列会默认先加载全局模块。在实际应用中，不要滥用只声明必要的，因为这会让队列变得复杂。
+    <script type="syntaxhighlighter" class="brush:js">
+    Do.global('dialog');
+    </script>
+    </div>
+      
+
+
+
     
     <script type="text/javascript" src="assets/shCore.js"></script>
     <script type="text/javascript" src="assets/shBrushJScript.js"></script>
@@ -103,6 +165,8 @@
     Do.add('lightBox', {path: 'http://leandrovieira.com/projects/jquery/lightbox/js/jquery.lightbox-0.4.js', type: 'js', requires: ['lightBox-css']});
     Do.add('dialog-css', {path: 'http://img3.douban.com/css/ui/packed_dialog1.css', type: 'css'});
     Do.add('dialog', {path: 'http://img3.douban.com/js/ui/packed_dialog5.js', type: 'js', requires: ['dialog-css']});
+
+    Do.global('dialog');
     
     
     Do(function(){
@@ -130,14 +194,27 @@
     });
 
     Do.css([
-        '.dui-dialog .hd h3  { padding:0; }',
+        '.dui-dialog .hd h3 { margin:0; }',
         '.dui-dialog-close:link { text-decoration:none; }'
     ].join(''));
 
-    Do.ready('dialog', function() {
-        dui.Dialog({content: 'hi, 在ready触发队列执行是一种更稳妥的选择', width: 400}).open();
+    Do.ready(function() {
+        var dlg = dui.Dialog({
+             content: 'hi, 在ready触发队列执行是一种更稳妥的选择. <pre>  Do.ready(your queue...)</pre>', 
+             buttons: ['confirm'],
+             width: 400
+        }).open();
+        setTimeout(function(){
+          dlg.update();
+          dlg.node.find(':button').focus();
+        }, 0);
     });
 
+    Do.delay(2000, function() {
+      (new Image()).src = 'http://l.yimg.com/k/im_siggnQGSdr0VqjCQpC.ABw.gYw---y526-x620-q75-n1/ygrammys/us/img/65/17/1876714805_13050152561.jpg';
+      (new Image()).src = 'http://l.yimg.com/k/im_siggDVgPxPixvlQV4MVirM_uYg---y526-x620-q75-n0/ygrammys/us/img/6f/ff/2250599110_2821831301.jpg';
+      (new Image()).src = 'http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg';
+    });
     </script>
 </body>
 </html>
