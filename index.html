@@ -1,14 +1,14 @@
 <!DOCTYPE HTML>
 <html lang="zh-CN">
 <head>
-	<meta charset="UTF-8">
+    <meta charset="UTF-8">
     <title></title>
     <link type="text/css" rel="stylesheet" href="assets/shCore.css">
     <link type="text/css" rel="stylesheet" href="assets/shThemeEclipse.css">
     <script type="text/javascript" src="js/do.min.js" data-cfg-corelib="http://img3.douban.com/js/packed_jquery.min2.js"></script>
     <style type="text/css">
         body { font:14px/1.8 arial,sans-serif; }
-        h1 { font-size:18px;color:#666; }
+        h1 { font-size:12px;color:#666; }
         h1 b{ margin-right:10px;font-size:64px;letter-spacing:-10px;color:#289942; }
         h2 { font-size:16px;margin:0; }
         img { border:0; }
@@ -67,8 +67,8 @@
     
     <div id="demo3" class="mod">
         <a href="http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg" title="痛仰"><img src="http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg" width="100" alt=""></a>
-        <a href="http://www.ray-ban.com/usa/images/assets/2646/2f75c4bad9553397c4db8c38286519e3.png?from=0x0&resize_to=800&size=2400x1400s" title="RB2156"><img src="http://www.ray-ban.com/usa/images/assets/2646/7ddd18333db027d0ca315317a0089c20.png?from=0x0&resize_to=145x145&size=2400x1400" alt=""></a>
-        <a href="http://images.apple.com/ipad/gallery/images/hardware-01-20100127.jpg" title="ipad gallery"><img src="http://images.apple.com/ipad/gallery/images/hardware-01t-20100127.png" alt=""></a>
+        <a href="http://thatsenuff.com/wp-content/uploads/2010/12/jay-z-eminem1-1024x912.jpg" title="RB2156"><img src="http://t0.gstatic.com/images?q=tbn:ANd9GcRxps4QUrmTZLnYzZiYfXH4n2E5qwvli2le9VTx3eBLzFYX24q4lA" width="100" alt=""></a>
+        <a href="http://img1.moko.cc/users/0/50/15131/post/89/img1_src_1427285.jpg" title="更纯粹越野！ATV越野"><img src="http://img1.moko.cc/users/0/50/15131/post/b4/img1_cover_1427383.jpg" width="100" alt=""></a>
     </div>
     
     <div class="code">
@@ -80,11 +80,11 @@
         // 引用模块
         Do('lightBox', function(){
             $('#demo3 a').lightBox({
-                imageLoading:           '../assets/lightbox-ico-loading.gif',
-                imageBtnPrev:           '../assets/lightbox-btn-prev.gif',
-                imageBtnNext:           '../assets/lightbox-btn-next.gif',
-                imageBtnClose:          '../assets/lightbox-btn-close.gif',
-                imageBlank:             '../assets/lightbox-blank.gif'
+                imageLoading:           'assets/lightbox-ico-loading.gif',
+                imageBtnPrev:           'assets/lightbox-btn-prev.gif',
+                imageBtnNext:           'assets/lightbox-btn-next.gif',
+                imageBtnClose:          'assets/lightbox-btn-close.gif',
+                imageBlank:             'assets/lightbox-blank.gif'
             });
         });
     </script>
@@ -97,8 +97,14 @@
     <script type="text/javascript">
 
     SyntaxHighlighter.all();
-    
+
     // demo code.
+    Do.add('lightBox-css', {path: 'http://leandrovieira.com/projects/jquery/lightbox/css/jquery.lightbox-0.4.css', type: 'css'});
+    Do.add('lightBox', {path: 'http://leandrovieira.com/projects/jquery/lightbox/js/jquery.lightbox-0.4.js', type: 'js', requires: ['lightBox-css']});
+    Do.add('dialog-css', {path: 'http://img3.douban.com/css/ui/packed_dialog1.css', type: 'css'});
+    Do.add('dialog', {path: 'http://img3.douban.com/js/ui/packed_dialog5.js', type: 'js', requires: ['dialog-css']});
+    
+    
     Do(function(){
         $('#demo1 a').click(function(e){
             e.preventDefault();
@@ -109,10 +115,6 @@
     Do('js/tip.js', function(){
         $('#demo2 a').simpleTip();
     });
-    
-    
-    Do.add('lightBox-css', {path: 'http://leandrovieira.com/projects/jquery/lightbox/css/jquery.lightbox-0.4.css', type: 'css'});
-    Do.add('lightBox', {path: 'http://leandrovieira.com/projects/jquery/lightbox/js/jquery.lightbox-0.4.js', type: 'js', requires: ['lightBox-css']});
     
     Do('lightBox', function(){
         $(document).ready(function(){
@@ -125,6 +127,15 @@
         });
         
       });
+    });
+
+    Do.css([
+        '.dui-dialog .hd h3  { padding:0; }',
+        '.dui-dialog-close:link { text-decoration:none; }'
+    ].join(''));
+
+    Do.ready('dialog', function() {
+        dui.Dialog({content: 'hi, 在ready触发队列执行是一种更稳妥的选择', width: 400}).open();
     });
 
     </script>
