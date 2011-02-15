@@ -342,7 +342,7 @@ _do.css = function(str) {
    css = _doc.createElement('style');
    css.type = 'text/css';
    css.id = 'do-inline-css';
-   _jsFiles[0].parentNode.insertBefore(css, _jsFiles[0]);
+   _doc.getElementsByTagName('head')[0].appendChild(css);
  }
 
  if (css.styleSheet) {
