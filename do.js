@@ -1,20 +1,22 @@
 // version 1.0
-(function() {
+(function(win, doc) {
 
-var _doc = document,
 
-_win = window,
+// 已加载模块, loaded[fileURL]=true
+var loaded = {},
 
-// 已加载模块, _loaded[fileURL]=true
-_loaded = {},
+// 加载列表
+loadList = {},
 
-// 加载中的模块，对付慢文件，_loadingQueue[url]=true|false
-_loadingQueue = {},
+// 加载中的模块，对付慢文件，loadingQueue[url]=true|false
+loadingQueue = {},
 
-_isArray = function(e) { return e.constructor === Array; },
+isArray = function(e) { 
+  return e.constructor === Array; 
+},
 
 // 内部配置文件
-_config = {
+config = {
     // 是否自动加载核心库
     autoLoad: true,
 
@@ -32,62 +34,76 @@ _config = {
     mods: {}
 },
 
+jsSelf = (function() { 
+  var files = doc.getElementsByTagName('script'); 
+  return files[files.length - 1];
+})(),
+
 // 插入的参考结点
-_jsFiles = _doc.getElementsByTagName('script'),
+refFile = jsSelf,
 
-_jsSelf = _jsFiles[_jsFiles.length - 1],
-
-_jsConfig,
+// 外部配置
+extConfig,
 
 _do,
 
-_readyList = [],
+readyList = [],
 
-_isReady = false,
+isDomReady = false,
+
+publicData = {},
+
+wait = {},
 
 // 全局模块
-_globalList = [],
+globalList = [],
 
 // 加载js/css文件
-_load = function(url, type, charset, cb, context) {
-    var refFile = _jsFiles[0];
+load = function(url, type, charset, cb) {
+    var wait, timeout = 6000;
 
     if (!url) {
         return;
     }
 
-    if (_loaded[url]) {
-        _loadingQueue[url] = false;
+    if (loaded[url]) {
+        loadingQueue[url] = false;
         if (cb) {
-            cb(url, context);
+            cb(url);
         }
         return;
     }
 
     // 加载中的文件有可能是太大，有可能是404
     // 当加载队列中再次出现此模块会再次加载，理论上会出现重复加载
-    if (_loadingQueue[url]) {
+    if (loadingQueue[url]) {
         setTimeout(function() {
-            _load(url, type, charset, cb, context);
-        }, 1);
+            load(url, type, charset, cb);
+        }, 10);
         return;
     }
 
-    _loadingQueue[url] = true;
+    loadingQueue[url] = true;
+
+    wait = win.setTimeout(function(){
+      // 文件加载超时。failback.
+      console.log(url);
+      load('http://www.douban.com/js/douban.js', type, charset, cb);
+    }, timeout);
 
     var n, t = type || url.toLowerCase().substring(url.lastIndexOf('.') + 1);
 
     if (t === 'js') {
-        n = _doc.createElement('script');
+        n = doc.createElement('script');
         n.setAttribute('type', 'text/javascript');
         n.setAttribute('src', url);
         n.setAttribute('async', true);
     } else if (t === 'css') {
-        n = _doc.createElement('link');
+        n = doc.createElement('link');
         n.setAttribute('type', 'text/css');
         n.setAttribute('rel', 'stylesheet');
         n.setAttribute('href', url);
-        _loaded[url] = true;
+        loaded[url] = true;
     }
 
     if (charset) {
@@ -98,8 +114,9 @@ _load = function(url, type, charset, cb, context) {
     if (t === 'css') {
       refFile.parentNode.insertBefore(n, refFile);
       if (cb) {
-        cb(url, context);
+        cb(url);
       }
+      win.clearTimeout(wait);
       return;
     }
 
@@ -108,12 +125,12 @@ _load = function(url, type, charset, cb, context) {
             this.readyState === 'loaded' ||
             this.readyState === 'complete') {
 
-            _loaded[this.getAttribute('src')] = true;
+            loaded[this.getAttribute('src')] = true;
 
             if (cb) {
-                cb(this.getAttribute('src'), context);
+                cb(this.getAttribute('src'));
             }
-
+            win.clearTimeout(wait);
             n.onload = n.onreadystatechange = null;
         }
     };
@@ -121,243 +138,232 @@ _load = function(url, type, charset, cb, context) {
     refFile.parentNode.insertBefore(n, refFile);
 },
 
-// 计算加载队列。参数e是一个数组
-_calculate = function(e) {
-    if (!e || !_isArray(e)) {
-        return;
-    }
 
-    var i = 0,
-    item,
-    result = [],
-    mods = _config.mods,
-    depeList = [],
-    hasAdded = {},
-    getDepeList = function(e) {
-        var i = 0, m, reqs;
+loadDeps = function(deps, cb) {
+  var mods = config.mods, 
+  id, m, mod, i = 0, len;
 
-        // break loop require.
-        if (hasAdded[e]) {
-            return depeList;
-        }
-        hasAdded[e] = true;
+  id = deps.join('');
+  len = deps.length;
 
-        if (mods[e].requires) {
-            reqs = mods[e].requires;
-            for (; typeof (m = reqs[i++]) !== 'undefined';) {
-              // is a module.
-              if (mods[m]) {
-                getDepeList(m);
-                depeList.push(m);
-               } else {
-                // is a file.
-                depeList.push(m);
-               }
-            }
-            return depeList;
-        }
-        return depeList;
-    };
-
-    for (; typeof (item = e[i++]) !== 'undefined'; ) {
-        if (mods[item] && mods[item].requires && mods[item].requires[0]) {
-            depeList = [];
-            hasAdded = {};
-            result = result.concat(getDepeList(item));
-        }
-        result.push(item);
-    }
-
-    return result;
-},
-
-_ready = function() {
-  _isReady = true;
-  if (_readyList.length > 0) {
-    _do.apply(this, _readyList);
-    _readyList = [];
-  }
-},
-
-_onDOMContentLoaded = function() {
-  if (_doc.addEventListener) {
-    _doc.removeEventListener('DOMContentLoaded', _onDOMContentLoaded, false);
-  } else if (_doc.attachEvent) {
-    _doc.detachEvent('onreadystatechange', _onDOMContentLoaded);
-  }
-  _ready();
-},
-
-_doScrollCheck = function() {
-  if (_isReady) {
+  if (loadList[id]) {
+    cb();
     return;
   }
 
-  try {
-    _doc.documentElement.doScroll('left');
-  } catch (err) {
-    return _win.setTimeout(_doScrollCheck, 1);
+  function callback() {
+    if(!--len) {
+      loadList[id] = 1;
+      cb();
+    }
   }
 
-  _ready();
-},
-
-// reference jQuery's bindReady method.
-_bindReady = function() {
-  if (_doc.readyState === 'complete') {
-    return _win.setTimeout(_ready, 1);
-  }
-
-  var toplevel = false;
-
-  if (_doc.addEventListener) {
-    _doc.addEventListener('DOMContentLoaded', _onDOMContentLoaded, false);
-    _win.addEventListener('load', _ready, false);
-  } else if (_doc.attachEvent) {
-    _doc.attachEvent('onreadystatechange', _onDOMContentLoaded);
-    _win.attachEvent('onload', _ready);
-
-    try {
-      toplevel = (_win.frameElement === null);
-    } catch (err) {}
-
-    if (document.documentElement.doScroll && toplevel) {
-      _doScrollCheck();
+  for (; m = deps[i++]; ) {
+    mod = (mods[m])? mods[m] : { path: m };
+    if (mod.requires) {
+      loadDeps(mod.requires, (function(mod){
+        return function(){
+          load(mod.path, mod.type, mod.charset, callback);
+        };
+      })(mod));
+    } else {
+      load(mod.path, mod.type, mod.charset, callback);
     }
   }
 },
 
-// 一个异步队列对象
-_Queue = function(e) {
-    if (!e || !_isArray(e)) {
-        return;
+/*!
+* contentloaded.js
+*
+* Author: Diego Perini (diego.perini at gmail.com)
+* Summary: cross-browser wrapper for DOMContentLoaded
+* Updated: 20101020
+* License: MIT
+* Version: 1.2
+*
+* URL:
+* http://javascript.nwbox.com/ContentLoaded/
+* http://javascript.nwbox.com/ContentLoaded/MIT-LICENSE
+*
+*/
+
+// @win window reference
+// @fn function reference
+contentLoaded = function(fn) {
+
+var done = false, top = true, doc = win.document, root = doc.documentElement,
+add = doc.addEventListener ? 'addEventListener' : 'attachEvent',
+rem = doc.addEventListener ? 'removeEventListener' : 'detachEvent',
+pre = doc.addEventListener ? '' : 'on',
+
+init = function(e) {
+  if (e.type == 'readystatechange' && doc.readyState != 'complete') return;
+  (e.type == 'load' ? win : doc)[rem](pre + e.type, init, false);
+  if (!done && (done = true)) fn.call(win, e.type || e);
+},
+
+poll = function() {
+  try { root.doScroll('left'); } catch(e) { setTimeout(poll, 50); return; }
+  init('poll');
+};
+
+if (doc.readyState == 'complete') fn.call(win, 'lazy');
+else {
+  if (doc.createEventObject && root.doScroll) {
+    try { top = !win.frameElement; } catch(e) { }
+    if (top) {
+     poll();
     }
-
-    this.queue = e;
-
-    // 队列当前要加载的模块
-    this.current = null;
-};
-
-_Queue.prototype = {
-
-    _interval: 10,
-
-    start: function() {
-        var o = this;
-        this.current = this.next();
-
-        if (!this.current) {
-            this.end = true;
-            return;
-        }
-
-        this.run();
-    },
-
-    run: function() {
-        var o = this, mod, currentMod = this.current;
-
-        if (typeof currentMod === 'function') {
-            currentMod();
-            this.start();
-            return;
-        } else if (typeof currentMod === 'string') {
-            if (_config.mods[currentMod]) {
-              mod = _config.mods[currentMod];
-              _load(mod.path, mod.type, mod.charset, function(e) {
-                 o.start();
-              }, o);
-            } else if (/\.js|\.css/i.test(currentMod)) {
-              // load a file.
-              _load(currentMod, '', '', function(e, o) {
-                 o.start();
-              }, o);
-            } else {
-              // no found module. skip to next
-              this.start();
-           }
-        }
-    },
-
-    next: function() { return this.queue.shift(); }
-};
-
-// 初始配置
-_jsConfig = _jsSelf.getAttribute('data-cfg-autoload');
-if (typeof _jsConfig === 'string') {
-  _config.autoLoad = (_jsConfig.toLowerCase() === 'true') ? true : false;
+  }
+  doc[add](pre + 'DOMContentLoaded', init, false);
+  doc[add](pre + 'readystatechange', init, false);
+  win[add](pre + 'load', init, false);
 }
 
-_jsConfig = _jsSelf.getAttribute('data-cfg-corelib');
-if (typeof _jsConfig === 'string') {
-  _config.coreLib = _jsConfig.split(',');
+};
+
+
+// 初始外部配置
+extConfig = jsSelf.getAttribute('data-cfg-autoload');
+if (typeof extConfig === 'string') {
+  config.autoLoad = (extConfig.toLowerCase() === 'true') ? true : false;
 }
+
+extConfig = jsSelf.getAttribute('data-cfg-corelib');
+if (typeof extConfig === 'string') {
+  config.coreLib = extConfig.split(',');
+}
+
 
 
 _do = function() {
-    var args = [].slice.call(arguments), thread;
-    if (_globalList.length > 0) {
-       args = _globalList.concat(args);
-    }
+  var args = [].slice.call(arguments), 
+  mods = config.mods, fn, list, id, len, i = 0, m, mod;
 
-    if (_config.autoLoad) {
-       args = _config.coreLib.concat(args);
+  // 自动加载核心库
+  if (config.autoLoad) {
+    if (!loadList[config.coreLib.join('')]) {
+      loadDeps(config.coreLib, function(){
+        _do.apply(null, args);
+      });
+      return;
     }
+  }
 
-    thread = new _Queue(_calculate(args));
-    thread.start();
+  if (globalList.length > 0) {
+    if (!loadList[globalList.join('')]) {
+     loadDeps(globalList, function(){
+        _do.apply(null, args);
+      });
+      return;
+    }
+  }
+
+  if (typeof args[args.length - 1] === 'function' ) {
+    fn = args.pop();
+  }
+
+  id = args.join('');
+
+
+  if ((args.length === 0 || loadList[id]) && fn) {
+    fn();
+    return;
+  }
+
+  len = args.length;
+
+  function callback() {
+    if (!--len) {
+      loadList[id] = 1;
+      fn && fn();
+    }
+  };
+
+  for (; m = args[i++]; ) {
+    mod = (mods[m])? mods[m] : { path: m };
+    if (mod.requires) {
+      loadDeps(mod.requires, (function(mod){
+        return function(){
+          load(mod.path, mod.type, mod.charset, callback);
+        };
+      })(mod));
+    } else {
+      load(mod.path, mod.type, mod.charset, callback);
+    }
+  }
 };
 
 _do.add = function(sName, oConfig) {
     if (!sName || !oConfig || !oConfig.path) {
         return;
     }
-    _config.mods[sName] = oConfig;
+    config.mods[sName] = oConfig;
 };
 
 _do.delay = function() {
    var args = [].slice.call(arguments), delay = args.shift();
-   _win.setTimeout(function() {
+   win.setTimeout(function() {
      _do.apply(this, args);
    }, delay);
 };
 
 _do.global = function() {
    var args = [].slice.call(arguments);
-   _globalList = _globalList.concat(args);
+   globalList = globalList.concat(args);
 };
 
 _do.ready = function() {
     var args = [].slice.call(arguments);
-    if (_isReady) {
+    if (isDomReady) {
       return _do.apply(this, args);
     }
-    _readyList = _readyList.concat(args);
+    readyList.push(args);
 };
 
-_do.css = function(str) {
- var css = _doc.getElementById('do-inline-css');
+_do.css = function(s) {
+ var css = doc.getElementById('do-inline-css');
  if (!css) {
-   css = _doc.createElement('style');
+   css = doc.createElement('style');
    css.type = 'text/css';
    css.id = 'do-inline-css';
-   _doc.getElementsByTagName('head')[0].appendChild(css);
+   refFile.parentNode.insertBefore(css, refFile);
  }
 
  if (css.styleSheet) {
-   css.styleSheet.cssText = css.styleSheet.cssText + str;
+   css.styleSheet.cssText = css.styleSheet.cssText + s;
  } else {
-   css.appendChild(_doc.createTextNode(str));
+   css.appendChild(doc.createTextNode(s));
  }
 };
 
-if (_config.autoLoad) {
-  _do(_config.coreLib);
-}
+_do.setPublicData = function(prop, value) {
+  publicData[prop] = value;
+  if (wait[prop]) {
+    wait[prop](value);
+    delete wait[prop];
+  }
+};
 
-this.Do = _do;
+_do.getPublicData = function(prop, cb) {
+  if (typeof publicData[prop] !== 'undefined') {
+    cb(publicData[prop]);
+    return;
+  } 
+  wait[prop] = cb;
+};
 
-_bindReady();
 
-})();
+win.Do = _do;
+
+contentLoaded(function(){
+  var i, list;
+  isDomReady = true;
+  if (readyList.length) {
+    for(; list = readyList[i++]; ) {
+      _do.apply(this, list);
+    }
+  }
+});
+
+})(window, document);
