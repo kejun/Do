@@ -1,6 +1,8 @@
-// version 1.0
-(function(win, doc) {
+/* Do version 2.0
+ * creator: kejun (listenpro@gmail.com)
+ */
 
+(function(win, doc) {
 
 // 已加载模块, loaded[fileURL]=true
 var loaded = {},
@@ -8,29 +10,31 @@ var loaded = {},
 // 加载列表
 loadList = {},
 
-// 加载中的模块，对付慢文件，loadingQueue[url]=true|false
-loadingQueue = {},
+// 加载中的模块，loadingFiles[url]=true|false
+loadingFiles = {},
 
-isArray = function(e) { 
-  return e.constructor === Array; 
-},
+mappingFile = {},
 
 // 内部配置文件
 config = {
     // 是否自动加载核心库
     autoLoad: true,
 
+    // 加载延迟
+    timeout: 5000,
+
     //核心库
     coreLib: ['http://t.douban.com/js/jquery.min.js'],
 
-    //模块依赖
-    //{
-    // moduleName: {
-    //     path: 'URL',
-    //     type:'js|css',
-    //     requires:['moduleName1', 'fileURL']
-    //   }
-    //}
+    /* 模块依赖
+     * {
+     *  moduleName: {
+     *      path: 'URL',
+     *      type:'js|css',
+     *      requires:['moduleName1', 'fileURL']
+     *    }
+     * }
+     */
     mods: {}
 },
 
@@ -39,13 +43,7 @@ jsSelf = (function() {
   return files[files.length - 1];
 })(),
 
-// 插入的参考结点
-refFile = jsSelf,
-
-// 外部配置
 extConfig,
-
-_do,
 
 readyList = [],
 
@@ -58,87 +56,117 @@ wait = {},
 // 全局模块
 globalList = [],
 
+
+isArray = function(e) { 
+  return e.constructor === Array; 
+},
+
+
 // 加载js/css文件
 load = function(url, type, charset, cb) {
-    var wait, timeout = 6000;
+    var wait, n, t, img;
 
     if (!url) {
         return;
     }
 
+    url = mappingFile[url] || url;
+
     if (loaded[url]) {
-        loadingQueue[url] = false;
+        loadingFiles[url] = false;
         if (cb) {
             cb(url);
         }
         return;
     }
 
-    // 加载中的文件有可能是太大，有可能是404
-    // 当加载队列中再次出现此模块会再次加载，理论上会出现重复加载
-    if (loadingQueue[url]) {
+    if (loadingFiles[url]) {
         setTimeout(function() {
             load(url, type, charset, cb);
         }, 10);
         return;
     }
 
-    loadingQueue[url] = true;
+    loadingFiles[url] = true;
 
-    wait = win.setTimeout(function(){
-      // 文件加载超时。failback.
-      console.log(url);
-      load('http://www.douban.com/js/douban.js', type, charset, cb);
-    }, timeout);
+    wait = win.setTimeout(function() {
+      var newUrl;
+      // 文件加载超时
+      // newURL和URL的映射
+      if (config.failback) {
+        try {
+          newUrl = eval(config.failback)(url); 
+          mappingFile[url] = newUrl;
+          load(newUrl, type, charset, cb);
+        } catch(ex) {}
+      }
+    }, config.timeout);
 
-    var n, t = type || url.toLowerCase().substring(url.lastIndexOf('.') + 1);
+    t =  type || url.toLowerCase().substring(url.lastIndexOf('.') + 1);
 
     if (t === 'js') {
-        n = doc.createElement('script');
-        n.setAttribute('type', 'text/javascript');
-        n.setAttribute('src', url);
-        n.setAttribute('async', true);
+      n = doc.createElement('script');
+      n.setAttribute('type', 'text/javascript');
+      n.setAttribute('src', url);
+      n.setAttribute('async', true);
     } else if (t === 'css') {
-        n = doc.createElement('link');
-        n.setAttribute('type', 'text/css');
-        n.setAttribute('rel', 'stylesheet');
-        n.setAttribute('href', url);
-        loaded[url] = true;
+      n = doc.createElement('link');
+      n.setAttribute('type', 'text/css');
+      n.setAttribute('rel', 'stylesheet');
+      n.setAttribute('href', url);
     }
 
     if (charset) {
-        n.charset = charset;
+      n.charset = charset;
     }
 
-    // CSS无必要监听是否加载完毕
     if (t === 'css') {
-      refFile.parentNode.insertBefore(n, refFile);
-      if (cb) {
-        cb(url);
+      img = new Image();
+      img.onerror = function() {
+        loaded[url] = 1;
+        cb && cb(url);
+        win.clearTimeout(wait);
+        img.onerror = null;
+        img = null;
       }
-      win.clearTimeout(wait);
-      return;
+      img.src = url;
+    } else {
+      // firefox, safari, chrome, ie9下加载失败触发
+      // 如果文件是404, 会比timeout早触发onerror
+      n.onerror = function() {
+       loaded[url] = 1;
+       cb && cb(url);
+       // IE9下会触发onerror和onload，导致重复callback
+       cb = null;
+       n.onerror = null;
+       win.clearTimeout(wait);
+      };
+
+      // ie6~8通过创建vbscript可以识别是否加载成功。
+      // 但这样需先测试性加载再加载影响性能。即使没成功加载而触发cb，顶多报错，没必要杜绝这种报错
+
+      // ie6~9下加载成功或失败，firefox, safari, opera下加载成功触发
+      n.onload = n.onreadystatechange = function() {
+          var url;
+          if (!this.readyState ||
+              this.readyState === 'loaded' ||
+              this.readyState === 'complete') {
+            url = this.getAttribute('src');
+            loaded[url] = 1;
+            cb && cb(url);
+            cb = null;
+            n.onload = n.onreadystatechange = null;
+            win.clearTimeout(wait);
+          }
+      };
     }
 
-    n.onload = n.onreadystatechange = function() {
-        if (!this.readyState ||
-            this.readyState === 'loaded' ||
-            this.readyState === 'complete') {
-
-            loaded[this.getAttribute('src')] = true;
-
-            if (cb) {
-                cb(this.getAttribute('src'));
-            }
-            win.clearTimeout(wait);
-            n.onload = n.onreadystatechange = null;
-        }
-    };
-
-    refFile.parentNode.insertBefore(n, refFile);
+    setTimeout(function(){
+      jsSelf.parentNode.insertBefore(n, jsSelf);
+    }, 0);
 },
 
-
+// 加载依赖论文件(顺序)
 loadDeps = function(deps, cb) {
   var mods = config.mods, 
   id, m, mod, i = 0, len;
@@ -190,53 +218,48 @@ loadDeps = function(deps, cb) {
 // @win window reference
 // @fn function reference
 contentLoaded = function(fn) {
+  var done = false, top = true, 
+  doc = win.document, 
+  root = doc.documentElement,
+  add = doc.addEventListener ? 'addEventListener' : 'attachEvent',
+  rem = doc.addEventListener ? 'removeEventListener' : 'detachEvent',
+  pre = doc.addEventListener ? '' : 'on',
 
-var done = false, top = true, doc = win.document, root = doc.documentElement,
-add = doc.addEventListener ? 'addEventListener' : 'attachEvent',
-rem = doc.addEventListener ? 'removeEventListener' : 'detachEvent',
-pre = doc.addEventListener ? '' : 'on',
+  init = function(e) {
+    if (e.type == 'readystatechange' && doc.readyState != 'complete') return;
+    (e.type == 'load' ? win : doc)[rem](pre + e.type, init, false);
+    if (!done && (done = true)) fn.call(win, e.type || e);
+  },
 
-init = function(e) {
-  if (e.type == 'readystatechange' && doc.readyState != 'complete') return;
-  (e.type == 'load' ? win : doc)[rem](pre + e.type, init, false);
-  if (!done && (done = true)) fn.call(win, e.type || e);
+  poll = function() {
+    try { root.doScroll('left'); } catch(e) { setTimeout(poll, 50); return; }
+    init('poll');
+  };
+
+  if (doc.readyState == 'complete') fn.call(win, 'lazy');
+  else {
+    if (doc.createEventObject && root.doScroll) {
+      try { top = !win.frameElement; } catch(e) { }
+      if (top) {
+       poll();
+      }
+    }
+    doc[add](pre + 'DOMContentLoaded', init, false);
+    doc[add](pre + 'readystatechange', init, false);
+    win[add](pre + 'load', init, false);
+  }
 },
 
-poll = function() {
-  try { root.doScroll('left'); } catch(e) { setTimeout(poll, 50); return; }
-  init('poll');
-};
-
-if (doc.readyState == 'complete') fn.call(win, 'lazy');
-else {
-  if (doc.createEventObject && root.doScroll) {
-    try { top = !win.frameElement; } catch(e) { }
-    if (top) {
-     poll();
+fireReadyList = function() {
+  var i = 0, list;
+  if (readyList.length) {
+    for(; list = readyList[i++]; ) {
+      d.apply(this, list);
     }
   }
-  doc[add](pre + 'DOMContentLoaded', init, false);
-  doc[add](pre + 'readystatechange', init, false);
-  win[add](pre + 'load', init, false);
-}
+},
 
-};
-
-
-// 初始外部配置
-extConfig = jsSelf.getAttribute('data-cfg-autoload');
-if (typeof extConfig === 'string') {
-  config.autoLoad = (extConfig.toLowerCase() === 'true') ? true : false;
-}
-
-extConfig = jsSelf.getAttribute('data-cfg-corelib');
-if (typeof extConfig === 'string') {
-  config.coreLib = extConfig.split(',');
-}
-
-
-
-_do = function() {
+d = function() {
   var args = [].slice.call(arguments), 
   mods = config.mods, fn, list, id, len, i = 0, m, mod;
 
@@ -244,7 +267,7 @@ _do = function() {
   if (config.autoLoad) {
     if (!loadList[config.coreLib.join('')]) {
       loadDeps(config.coreLib, function(){
-        _do.apply(null, args);
+        d.apply(null, args);
       });
       return;
     }
@@ -253,7 +276,7 @@ _do = function() {
   if (globalList.length > 0) {
     if (!loadList[globalList.join('')]) {
      loadDeps(globalList, function(){
-        _do.apply(null, args);
+        d.apply(null, args);
       });
       return;
     }
@@ -294,40 +317,40 @@ _do = function() {
   }
 };
 
-_do.add = function(sName, oConfig) {
+d.add = function(sName, oConfig) {
     if (!sName || !oConfig || !oConfig.path) {
         return;
     }
     config.mods[sName] = oConfig;
 };
 
-_do.delay = function() {
+d.delay = function() {
    var args = [].slice.call(arguments), delay = args.shift();
    win.setTimeout(function() {
-     _do.apply(this, args);
+     d.apply(this, args);
    }, delay);
 };
 
-_do.global = function() {
+d.global = function() {
    var args = [].slice.call(arguments);
    globalList = globalList.concat(args);
 };
 
-_do.ready = function() {
+d.ready = function() {
     var args = [].slice.call(arguments);
     if (isDomReady) {
-      return _do.apply(this, args);
+      return d.apply(this, args);
     }
     readyList.push(args);
 };
 
-_do.css = function(s) {
+d.css = function(s) {
  var css = doc.getElementById('do-inline-css');
  if (!css) {
    css = doc.createElement('style');
    css.type = 'text/css';
    css.id = 'do-inline-css';
-   refFile.parentNode.insertBefore(css, refFile);
+   jsSelf.parentNode.insertBefore(css, jsSelf);
  }
 
  if (css.styleSheet) {
@@ -337,7 +360,7 @@ _do.css = function(s) {
  }
 };
 
-_do.setPublicData = function(prop, value) {
+d.setPublicData = function(prop, value) {
   publicData[prop] = value;
   if (wait[prop]) {
     wait[prop](value);
@@ -345,7 +368,7 @@ _do.setPublicData = function(prop, value) {
   }
 };
 
-_do.getPublicData = function(prop, cb) {
+d.getPublicData = function(prop, cb) {
   if (typeof publicData[prop] !== 'undefined') {
     cb(publicData[prop]);
     return;
@@ -353,17 +376,32 @@ _do.getPublicData = function(prop, cb) {
   wait[prop] = cb;
 };
 
+win.Do = d;
 
-win.Do = _do;
-
-contentLoaded(function(){
-  var i, list;
+contentLoaded(function() {
   isDomReady = true;
-  if (readyList.length) {
-    for(; list = readyList[i++]; ) {
-      _do.apply(this, list);
-    }
-  }
+  fireReadyList();
 });
+
+// 初始外部配置
+extConfig = jsSelf.getAttribute('data-cfg-autoload');
+if (extConfig) {
+  config.autoLoad = (extConfig.toLowerCase() === 'true') ? true : false;
+}
+
+extConfig = jsSelf.getAttribute('data-cfg-corelib');
+if (extConfig) {
+  config.coreLib = extConfig.split(',');
+}
+
+extConfig = jsSelf.getAttribute('data-cfg-timeout');
+if (extConfig) {
+  config.timeout = extConfig|0;
+}
+
+extConfig = jsSelf.getAttribute('data-cfg-failback');
+if (extConfig) {
+  config.failback = extConfig;
+}
 
 })(window, document);
