@@ -376,6 +376,15 @@ d.getPublicData = function(prop, cb) {
   wait[prop] = cb;
 };
 
+d.setConfig = function(n, v) {
+  config[n] = v;
+  return d;
+};
+
+d.getConfig = function(n) {
+  return config[n];
+};
+
 win.Do = d;
 
 contentLoaded(function() {
