@@ -10,16 +10,17 @@
         body { font:14px/1.8 arial,sans-serif; }
         h1 { font-size:12px;color:#666; }
         h1 b{ margin-right:10px;font-size:64px;letter-spacing:-10px;color:#289942; }
+        h1 i { font-style:normal;color:#2a00ff; }
         h2 { font-size:16px;margin:0; }
         img { border:0; }
         .bd { margin:0 20px; }
-        .code { margin-bottom:2em; }
+        .mod { margin-bottom:2em; }
         #demo3 a { display:inline-block;margin:0 1em;vertical-align:top; }
     </style>
 </head>
 <body>
     
-    <h1><b>Do</b>轻量级Javascript开发框架</h1>
+  <h1><b>Do</b> <i>v2.0 pre</i> 轻量级文件加载和依赖管理解决方案</h1>
     
     <div class="bd">
         
@@ -27,17 +28,15 @@
     
         <div class="code">
         <script type="syntaxhighlighter" class="brush:js">
-        <script src="../do.min.js">&lt;/script> (3.5k)
+        <script src="../do.min.js">&lt;/script> (4.6k, gzip:1.8k)
         </script>
         </div>  
         
     
     <h2>Demo 1: 执行inline script</h2>
-    
-    <div id="demo1" class="mod">
-        <a href="#">Click Here.</a>
+    <div class="intro">
+      inline的javascript如果依赖核心库需放入Do中。如下：
     </div>
-    
     <div class="code">
     <script type="syntaxhighlighter" class="brush:js">
     Do(function(){
@@ -48,13 +47,17 @@
     });
     </script>
     </div>
+
+    <div id="demo1" class="mod">
+       Demo: <a href="#">Click Here.</a>
+    </div>
+    
     
     
     <h2>Demo 2: 依赖外部文件</h2>
-    <div id="demo2" class="mod">
-        <a href="#" title="鼠标悬浮这里会看到一个提示框">Mouseover Here.</a>
+    <div class="intro">
+      最后一个参数是处理方法，前面是依赖列表，可以是文件地址或模块名。如：
     </div>
-    
     <div class="code">
     <script type="syntaxhighlighter" class="brush:js">
     Do('js/tip.js', function(){
@@ -62,21 +65,27 @@
     });
     </script>
     </div>
-    
-    <h2>Demo 3: 依赖模块方式</h2>
-    
-    <div id="demo3" class="mod">
-        <a href="http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg" title="痛仰"><img src="http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg" width="100" alt=""></a>
-        <a href="http://l.yimg.com/k/im_siggnQGSdr0VqjCQpC.ABw.gYw---y526-x620-q75-n1/ygrammys/us/img/65/17/1876714805_13050152561.jpg" title="RB2156"><img src="http://l.yimg.com/k/im_siggj2toHESF0YSrOK.01_cV7g---x75-xc1-yc1-wc500-hc500-q75-n0/ygrammys/us/img/65/17/1876714805_13050152561.jpg" alt="Nominees: Best Rock Album"></a>
-        <a href="http://l.yimg.com/k/im_siggDVgPxPixvlQV4MVirM_uYg---y526-x620-q75-n0/ygrammys/us/img/6f/ff/2250599110_2821831301.jpg" title="RB2156"><img src="http://l.yimg.com/k/im_sigg.sEc0qmHe3anrdn1at7Ayw---x75-xc1-yc1-wc500-hc500-q75-n0/ygrammys/us/img/6f/ff/2250599110_2821831301.jpg" alt="Nominees: Best Alternative Music Album"></a>
+    <div id="demo2" class="mod">
+       Demo: <a href="#" title="鼠标悬浮这里会看到一个提示框">Mouseover Here.</a>
     </div>
     
-    <div class="code">
+    
+    <h2>Demo 3: 依赖模块方式</h2>
+    <div class="intro mod">
+    模块的定义。模块定义建议统一放在一个地方，如head里。
     <script type="syntaxhighlighter" class="brush:js">
-        // 添加模块
+        // add方法定义模块和模块的依赖关系。注：add方法并不会加载模块，只是添加模块配置。
         Do.add('lightBox-css', {path: '{URL}', type: 'css'});
         Do.add('lightBox', {path: '{URL}', type: 'js', requires: ['lightBox-css']});
-
+    </script>
+    </div>
+    
+    
+    <div class="intro">
+    在使用的时候更简便且不用担心文件的版本问题。注：在使用时才会执行文件加载
+    </div>
+    <div class="code">
+    <script type="syntaxhighlighter" class="brush:js">
         // 引用模块
         Do('lightBox', function(){
             $('#demo3 a').lightBox({
@@ -90,11 +99,19 @@
     </script>
     </div>
 
+    <div id="demo3" class="mod">
+      Demo:
+        <a href="http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg" title="痛仰"><img src="http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg" width="100" alt=""></a>
+        <a href="http://l.yimg.com/k/im_siggnQGSdr0VqjCQpC.ABw.gYw---y526-x620-q75-n1/ygrammys/us/img/65/17/1876714805_13050152561.jpg" title="RB2156"><img src="http://l.yimg.com/k/im_siggj2toHESF0YSrOK.01_cV7g---x75-xc1-yc1-wc500-hc500-q75-n0/ygrammys/us/img/65/17/1876714805_13050152561.jpg" alt="Nominees: Best Rock Album"></a>
+        <a href="http://l.yimg.com/k/im_siggDVgPxPixvlQV4MVirM_uYg---y526-x620-q75-n0/ygrammys/us/img/6f/ff/2250599110_2821831301.jpg" title="RB2156"><img src="http://l.yimg.com/k/im_sigg.sEc0qmHe3anrdn1at7Ayw---x75-xc1-yc1-wc500-hc500-q75-n0/ygrammys/us/img/6f/ff/2250599110_2821831301.jpg" alt="Nominees: Best Alternative Music Album"></a>
+    </div>
 
-    <h2>Demo 4: 在DOMReay执行</h2>
-    
-    <div class="code">
+
+    <h2>Demo 4: 在DOMReay后执行</h2>
+    <div class="intro">
     如果要确保顺利操作页面上的任意结点，最好使用ready方法，让队列在DOMReady后执行，当然这样会比直接用Do延后一些执行。
+    </div>
+    <div class="code">
     <script type="syntaxhighlighter" class="brush:js">
     Do.ready('dialog', function() {
         var dlg = dui.Dialog({
@@ -111,9 +128,10 @@
 
   
     <h2>Demo 5: Delay执行</h2>
-    
-    <div class="code">
+    <div class="intro">
     有些JS不那么着急执行，不妨delay一段时间后再执行。比如：预加载一些东西。
+    </div>
+    <div class="code">
     <script type="syntaxhighlighter" class="brush:js">
     Do.delay(2000, function() {
       (new Image()).src = 'URL';
@@ -126,10 +144,11 @@
 
 
   
-    <h2>Demo 6: 附件组件特殊的CSS</h2>
-    
+    <h2>Demo 6: 注入CSS</h2>
+    <div class="intro">
+     虽然不鼓励这么干，但有些时候的确有这样的需求。
+    </div>
     <div class="code">
-      虽然不鼓励这么干，但有些时候的确有这样的需求。
     <script type="syntaxhighlighter" class="brush:js">
     Do.css([
         '.dui-dialog .hd h3 { margin:0; }',
@@ -140,9 +159,10 @@
       
 
     <h2>Demo 7: 声明全局模块</h2>
-    
+    <div class="intro">
+    声明了全局模块，后面的队列会默认先加载全局模块。在实际应用中不要滥用，只声明必要的，因为这样会影响一些性能。
+    </div>
     <div class="code">
-    声明了全局模块，后面的队列会默认先加载全局模块。在实际应用中，不要滥用只声明必要的，因为这会让队列变得复杂。
     <script type="syntaxhighlighter" class="brush:js">
     Do.global('dialog');
     </script>
@@ -152,18 +172,88 @@
 
     <h2>Demo 8: 配置Do</h2>
     
+    <div class="intro">
+    8-1: 关闭自动加载核心库功能。解决和传统引用混用的情况
+    </div>
     <div class="code">
-    8-1: 关闭自动加载核心库功能。解决和传统模式混用的情况。
     <script type="syntaxhighlighter" class="brush:js">
     <script type="text/javascript" src="js/do.min.js" data-cfg-autoload="true|false"></script>
     </script>
-    8-2: 指定其他核心库。
+    </div>
+    <div class="intro">
+    8-2: 指定其他核心库。注：将覆盖原有的
+    </div>
+    <div class="code">
     <script type="syntaxhighlighter" class="brush:js">
     <script type="text/javascript" src="js/do.min.js" data-cfg-corelib="http://img3.douban.com/js/packed_jquery.min2.js"></script>
     </script>
     </div>
+    <div class="intro">
+    8-3: 代码中修改配置
+    </div>
+    <div class="code">
+    <script type="syntaxhighlighter" class="brush:js">
+      // setConfig方法
+      // 可以配置的参数，包括：
+      // 1.加载超时
+      Do.setConfig('timeout', 3000);
+
+      // 2.超时的fallback回调
+      Do.setConfig('fallback', function(url){
+        // log timeout file.
+      });
+
+      // 3.设置核心库
+      Do.setConfig('coreLib', [...]);
+
+      // 4.模块列表
+      /* 模块设置的格式：
+          { 
+            'mod1' : { path: 'URL 1', type: 'js|css', requires: ['文件地址|模块名'] },
+            'mod2' : { path: 'URL 2', type: 'js|css', requires: ['文件地址|模块名'] },
+            'mod2' : { path: 'URL 3', type: 'js|css', requires: ['文件地址|模块名'] },
+            ...
+          }
+      */
+      Do.setConfig('mods', {...});
+    </script>
+    </div>
       
 
+    <h2>Demo 9: 模块间的公共数据通讯</h2>
+    <div class="intro">
+      由于文件是异步加载的，所以执行的顺序不是固定的。如果模块间存在数据上的依赖，可以使用setData和getData方法：
+    </div>
+    <div class="code">
+    <script type="syntaxhighlighter" class="brush:js">
+
+     Do(function(){
+        Do.getData('test', function(value){
+          console.log(value); //1000
+        });
+     });
+
+     Do('slow-js', function(){
+         Do.setData('test', 1000);
+     });
+
+    </script>
+    </div>
+
+
+    <h2>升级说明：</h2>
+    <div class="intro">
+      Do的加载列表改成并行加载。依赖模块的加载是顺序的。如：
+    <script type="syntaxhighlighter" class="brush:js">
+      // 在旧版，mod2可以依赖mod1
+      // 在新版，mod1和mod2是并行加载的
+      Do('mod1', 'mod2', function() { ... });
+
+      // 如果mod2依赖mod1在模块定义中声明，如:
+      Do.add('mod2', { path:'url', type:'js', requires:['mod1'] });
+      Do('mod2', function() { ... });
+    </script>
+    </div>
 
 
     
@@ -172,7 +262,6 @@
 
 
     <script type="text/javascript">
-
     SyntaxHighlighter.all();
 
     // demo code.
