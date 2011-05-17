@@ -1,19 +1,18 @@
-/* Do version 2.0
+/* Do version 2.0 pre
  * creator: kejun (listenpro@gmail.com)
+ * 最新更新：2011-5-16
  */
 
 (function(win, doc) {
 
-// 已加载模块, loaded[fileURL]=true
+// 已加载模块
 var loaded = {},
 
-// 加载列表
+// 已加载列表
 loadList = {},
 
-// 加载中的模块，loadingFiles[url]=true|false
+// 加载中的模块
 loadingFiles = {},
-
-mappingFile = {},
 
 // 内部配置文件
 config = {
@@ -21,9 +20,9 @@ config = {
     autoLoad: true,
 
     // 加载延迟
-    timeout: 5000,
+    timeout: 6000,
 
-    //核心库
+    // 核心库
     coreLib: ['http://t.douban.com/js/jquery.min.js'],
 
     /* 模块依赖
@@ -32,7 +31,7 @@ config = {
      *      path: 'URL',
      *      type:'js|css',
      *      requires:['moduleName1', 'fileURL']
-     *    }
+     *  }
      * }
      */
     mods: {}
@@ -43,34 +42,42 @@ jsSelf = (function() {
   return files[files.length - 1];
 })(),
 
-extConfig,
-
-readyList = [],
-
-isDomReady = false,
-
-publicData = {},
-
-wait = {},
-
 // 全局模块
 globalList = [],
 
+// 外部参数
+extConfig,
+
+// domready回调堆栈
+readyList = [],
+
+// DOM Ready
+isReady = false,
+
+// 模块间的公共数据 
+publicData = {},
+
+// 公共数据回调堆栈 
+publicDataStack = {},
 
 isArray = function(e) { 
   return e.constructor === Array; 
 },
 
 
-// 加载js/css文件
 load = function(url, type, charset, cb) {
-    var wait, n, t, img;
+    var wait, n, t, img, 
+
+    done = function() {
+      loaded[url] = 1;
+      cb && cb(url);
+      cb = null;
+      win.clearTimeout(wait);
+    };
 
     if (!url) {
         return;
     }
-
-    url = mappingFile[url] || url;
 
     if (loaded[url]) {
         loadingFiles[url] = false;
@@ -90,14 +97,13 @@ load = function(url, type, charset, cb) {
     loadingFiles[url] = true;
 
     wait = win.setTimeout(function() {
-      var newUrl;
-      // 文件加载超时
-      // newURL和URL的映射
-      if (config.failback) {
+    /* 目前fallback处理，超时后如果有fallback回调，执行回调，然后继续等
+     * fallback的意义是log延时长的URI，这个处理不属于加载器本身的功能移到外部
+     * 没有跳过是为了避免错误。
+     */
+      if (config.fallback) {
         try {
-          newUrl = eval(config.failback)(url); 
-          mappingFile[url] = newUrl;
-          load(newUrl, type, charset, cb);
+          eval(config.fallback)(url); 
         } catch(ex) {}
       }
     }, config.timeout);
@@ -123,23 +129,17 @@ load = function(url, type, charset, cb) {
     if (t === 'css') {
       img = new Image();
       img.onerror = function() {
-        loaded[url] = 1;
-        cb && cb(url);
-        win.clearTimeout(wait);
+        done();
         img.onerror = null;
         img = null;
       }
       img.src = url;
     } else {
       // firefox, safari, chrome, ie9下加载失败触发
-      // 如果文件是404, 会比timeout早触发onerror
+      // 如果文件是404, 会比timeout早触发onerror。目前不处理404，只处理超时
       n.onerror = function() {
-       loaded[url] = 1;
-       cb && cb(url);
-       // IE9下会触发onerror和onload，导致重复callback
-       cb = null;
+       done();
        n.onerror = null;
-       win.clearTimeout(wait);
       };
 
       // ie6~8通过创建vbscript可以识别是否加载成功。
@@ -151,12 +151,8 @@ load = function(url, type, charset, cb) {
           if (!this.readyState ||
               this.readyState === 'loaded' ||
               this.readyState === 'complete') {
-            url = this.getAttribute('src');
-            loaded[url] = 1;
-            cb && cb(url);
-            cb = null;
+            done();
             n.onload = n.onreadystatechange = null;
-            win.clearTimeout(wait);
           }
       };
     }
@@ -263,7 +259,7 @@ d = function() {
   var args = [].slice.call(arguments), 
   mods = config.mods, fn, list, id, len, i = 0, m, mod;
 
-  // 自动加载核心库
+  // 加载核心库
   if (config.autoLoad) {
     if (!loadList[config.coreLib.join('')]) {
       loadDeps(config.coreLib, function(){
@@ -273,14 +269,16 @@ d = function() {
     }
   }
 
+  // 加载核心库
   if (globalList.length > 0) {
     if (!loadList[globalList.join('')]) {
-     loadDeps(globalList, function(){
+      loadDeps(globalList, function(){
         d.apply(null, args);
       });
       return;
     }
   }
+
 
   if (typeof args[args.length - 1] === 'function' ) {
     fn = args.pop();
@@ -332,13 +330,13 @@ d.delay = function() {
 };
 
 d.global = function() {
-   var args = [].slice.call(arguments);
+   var args = isArray(arguments[0])? arguments[0] : [].slice.call(arguments);
    globalList = globalList.concat(args);
 };
 
 d.ready = function() {
     var args = [].slice.call(arguments);
-    if (isDomReady) {
+    if (isReady) {
       return d.apply(this, args);
     }
     readyList.push(args);
@@ -360,20 +358,33 @@ d.css = function(s) {
  }
 };
 
-d.setPublicData = function(prop, value) {
+d.set = d.setPublicData = function(prop, value) {
+  var cbStack = publicDataStack[prop];
+
   publicData[prop] = value;
-  if (wait[prop]) {
-    wait[prop](value);
-    delete wait[prop];
+
+  if (!cbStack) {
+    return;
+  }
+
+  while (cbStack.length > 0) {
+    (cbStack.pop()).call(this, value);
   }
 };
 
-d.getPublicData = function(prop, cb) {
-  if (typeof publicData[prop] !== 'undefined') {
+d.get = d.getPublicData = function(prop, cb) {
+  if (publicData[prop]) {
     cb(publicData[prop]);
     return;
   } 
-  wait[prop] = cb;
+
+  if (!publicDataStack[prop]) {
+     publicDataStack[prop] = [];
+  }
+
+  publicDataStack[prop].push(function(value){
+    cb(value);
+  });
 };
 
 d.setConfig = function(n, v) {
@@ -388,7 +399,7 @@ d.getConfig = function(n) {
 win.Do = d;
 
 contentLoaded(function() {
-  isDomReady = true;
+  isReady = true;
   fireReadyList();
 });
 
@@ -401,16 +412,6 @@ if (extConfig) {
 extConfig = jsSelf.getAttribute('data-cfg-corelib');
 if (extConfig) {
   config.coreLib = extConfig.split(',');
-}
-
-extConfig = jsSelf.getAttribute('data-cfg-timeout');
-if (extConfig) {
-  config.timeout = extConfig|0;
-}
-
-extConfig = jsSelf.getAttribute('data-cfg-failback');
-if (extConfig) {
-  config.failback = extConfig;
 }
 
 })(window, document);
