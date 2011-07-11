@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Do v2.0 pre</title>
-    <link type="text/css" rel="stylesheet" href="assets/shCore.css">
-    <link type="text/css" rel="stylesheet" href="assets/shThemeEclipse.css">
-    <script type="text/javascript" src="js/do.min.js" data-cfg-corelib="http://img3.douban.com/js/packed_jquery.min2.js"></script>
+    <link type="text/css" rel="stylesheet" href="assets/prettify.css">
+    <script type="text/javascript" src="js/do.js" data-cfg-corelib="http://img3.douban.com/js/packed_jquery.min9556435062.js"></script>
     <style type="text/css">
         body { font:14px/1.8 arial,sans-serif; }
         h1 { font-size:12px;color:#666; }
@@ -27,9 +26,9 @@
     <h2>使用方法: 只需要在head里引入do.js文件</h2>
     
         <div class="code">
-        <script type="syntaxhighlighter" class="brush:js">
-        <script src="../do.min.js">&lt;/script> (4.6k, gzip:1.8k)
-        </script>
+        <pre class="prettyprint">
+        &lt;script src="../do.min.js">&lt;/script&gt; (4.4k, gzip:1.8k)
+        </pre>
         </div>  
         
     
@@ -38,14 +37,14 @@
       inline的javascript如果依赖核心库需放入Do中。如下：
     </div>
     <div class="code">
-    <script type="syntaxhighlighter" class="brush:js">
+    <pre class="prettyprint">
     Do(function(){
         $('#demo1 a').click(function(e){
             e.preventDefault();
-            $(this).animate({fontSize: '24px', fontWeight: 800}, 1000).fadeOut(1000);
+            $(this).animate({fontSize: '24px'}, 1000).fadeOut(1000);
         });
     });
-    </script>
+    </pre>
     </div>
 
     <div id="demo1" class="mod">
@@ -56,28 +55,39 @@
     
     <h2>Demo 2: 依赖外部文件</h2>
     <div class="intro">
-      最后一个参数是处理方法，前面是依赖列表，可以是文件地址或模块名。如：
+      2.1 最后一个参数是处理方法，前面是依赖列表，可以是文件地址或模块名。如：
     </div>
     <div class="code">
-    <script type="syntaxhighlighter" class="brush:js">
+    <pre class="prettyprint">
     Do('js/tip.js', function(){
         $('#demo2 a').simpleTip();
     });
-    </script>
+    </pre>
     </div>
+    <div class="intro">
+      2.2 inline定义依赖关系。如：
+    </div>
+    <div class="code">
+    <pre class="prettyprint">
+    Do({path: 'js/tip.js', requires:['tip-base.js']}, function(){
+        $('#demo2 a').simpleTip();
+    });
+    </pre>
+    </div>
+    
     <div id="demo2" class="mod">
        Demo: <a href="#" title="鼠标悬浮这里会看到一个提示框">Mouseover Here.</a>
     </div>
-    
+
     
     <h2>Demo 3: 依赖模块方式</h2>
     <div class="intro mod">
     模块的定义。模块定义建议统一放在一个地方，如head里。
-    <script type="syntaxhighlighter" class="brush:js">
+    <pre class="prettyprint">
         // add方法定义模块和模块的依赖关系。注：add方法并不会加载模块，只是添加模块配置。
         Do.add('lightBox-css', {path: '{URL}', type: 'css'});
         Do.add('lightBox', {path: '{URL}', type: 'js', requires: ['lightBox-css']});
-    </script>
+    </pre>
     </div>
     
     
@@ -85,7 +95,7 @@
     在使用的时候更简便且不用担心文件的版本问题。注：在使用时才会执行文件加载
     </div>
     <div class="code">
-    <script type="syntaxhighlighter" class="brush:js">
+    <pre class="prettyprint">
         // 引用模块
         Do('lightBox', function(){
             $('#demo3 a').lightBox({
@@ -96,7 +106,7 @@
                 imageBlank:             'assets/lightbox-blank.gif'
             });
         });
-    </script>
+    </pre>
     </div>
 
     <div id="demo3" class="mod">
@@ -112,10 +122,10 @@
     如果要确保顺利操作页面上的任意结点，最好使用ready方法，让队列在DOMReady后执行，当然这样会比直接用Do延后一些执行。
     </div>
     <div class="code">
-    <script type="syntaxhighlighter" class="brush:js">
+    <pre class="prettyprint">
     Do.ready('dialog', function() {
         var dlg = dui.Dialog({
-             content: 'hi, 在ready触发队列执行是一种更稳妥的选择. <pre>  Do.ready(your queue...)</pre>', 
+             content: 'hi, 在ready触发队列执行是一种更稳妥的选择. &lt;pre&gt;  Do.ready(your queue...)&lt;/pre&gt;', 
              buttons: ['confirm'],
              width: 400
         }).open();
@@ -123,7 +133,7 @@
           dlg.update();
         }, 0);
     });
-    </script>
+    </pre>
     </div>
 
   
@@ -132,13 +142,13 @@
     有些JS不那么着急执行，不妨delay一段时间后再执行。比如：预加载一些东西。
     </div>
     <div class="code">
-    <script type="syntaxhighlighter" class="brush:js">
+    <pre class="prettyprint">
     Do.delay(2000, function() {
       (new Image()).src = 'URL';
       (new Image()).src = 'URL';
       (new Image()).src = 'URL';
     });
-    </script>
+    </pre>
     </div>
       
 
@@ -149,12 +159,12 @@
      虽然不鼓励这么干，但有些时候的确有这样的需求。
     </div>
     <div class="code">
-    <script type="syntaxhighlighter" class="brush:js">
+    <pre class="prettyprint">
     Do.css([
         '.dui-dialog .hd h3 { margin:0; }',
         '.dui-dialog-close:link { text-decoration:none; }'
     ].join(''));
-    </script>
+    </pre>
     </div>
       
 
@@ -163,9 +173,9 @@
     声明了全局模块，后面的队列会默认先加载全局模块。在实际应用中不要滥用，只声明必要的，因为这样会影响一些性能。
     </div>
     <div class="code">
-    <script type="syntaxhighlighter" class="brush:js">
+    <pre class="prettyprint">
     Do.global('dialog');
-    </script>
+    </pre>
     </div>
       
 
@@ -176,23 +186,23 @@
     8-1: 关闭自动加载核心库功能。解决和传统引用混用的情况
     </div>
     <div class="code">
-    <script type="syntaxhighlighter" class="brush:js">
-    <script type="text/javascript" src="js/do.min.js" data-cfg-autoload="true|false"></script>
-    </script>
+    <pre class="prettyprint">
+    &lt;script type="text/javascript" src="js/do.min.js" data-cfg-autoload="true|false"&gt;&lt;/script&gt;
+    </pre>
     </div>
     <div class="intro">
     8-2: 指定其他核心库。注：将覆盖原有的
     </div>
     <div class="code">
-    <script type="syntaxhighlighter" class="brush:js">
-    <script type="text/javascript" src="js/do.min.js" data-cfg-corelib="http://img3.douban.com/js/packed_jquery.min2.js"></script>
-    </script>
+    <pre class="prettyprint">
+    &lt;script type="text/javascript" src="js/do.min.js" data-cfg-corelib="http://img3.douban.com/js/packed_jquery.min2.js"&gt;&lt;/script&gt;
+    </pre>
     </div>
     <div class="intro">
     8-3: 代码中修改配置
     </div>
     <div class="code">
-    <script type="syntaxhighlighter" class="brush:js">
+    <pre class="prettyprint">
       // setConfig方法
       // 可以配置的参数，包括：
       // 1.加载超时
@@ -216,7 +226,7 @@
           }
       */
       Do.setConfig('mods', {...});
-    </script>
+    </pre>
     </div>
       
 
@@ -225,7 +235,7 @@
       由于文件是异步加载的，所以执行的顺序不是固定的。如果模块间存在数据上的依赖，可以使用setData和getData方法：
     </div>
     <div class="code">
-    <script type="syntaxhighlighter" class="brush:js">
+    <pre class="prettyprint">
 
      Do(function(){
         Do.getData('test', function(value){
@@ -237,14 +247,14 @@
          Do.setData('test', 1000);
      });
 
-    </script>
+    </pre>
     </div>
 
 
     <h2>升级说明：</h2>
     <div class="intro">
       Do的加载列表改成并行加载。依赖模块的加载是顺序的。如：
-    <script type="syntaxhighlighter" class="brush:js">
+    <pre class="prettyprint">
       // 在旧版，mod2可以依赖mod1
       // 在新版，mod1和mod2是并行加载的
       Do('mod1', 'mod2', function() { ... });
@@ -252,31 +262,27 @@
       // 如果mod2依赖mod1在模块定义中声明，如:
       Do.add('mod2', { path:'url', type:'js', requires:['mod1'] });
       Do('mod2', function() { ... });
-    </script>
+    </pre>
     </div>
 
 
     
-    <script type="text/javascript" src="assets/shCore.js"></script>
-    <script type="text/javascript" src="assets/shBrushJScript.js"></script>
-
+    <script type="text/javascript" src="assets/prettify.js"></script>
 
     <script type="text/javascript">
-    SyntaxHighlighter.all();
+    prettyPrint();
 
     // demo code.
     Do.add('lightBox-css', {path: 'http://leandrovieira.com/projects/jquery/lightbox/css/jquery.lightbox-0.4.css', type: 'css'});
     Do.add('lightBox', {path: 'http://leandrovieira.com/projects/jquery/lightbox/js/jquery.lightbox-0.4.js', type: 'js', requires: ['lightBox-css']});
     Do.add('dialog-css', {path: 'http://img3.douban.com/css/ui/packed_dialog1.css', type: 'css'});
     Do.add('dialog', {path: 'http://img3.douban.com/js/ui/packed_dialog5.js', type: 'js', requires: ['dialog-css']});
-
     Do.global('dialog');
-    
     
     Do(function(){
         $('#demo1 a').click(function(e){
             e.preventDefault();
-            $(this).animate({fontSize: '24px', fontWeight: 800}, 1000).fadeOut(1000);
+            $(this).animate({'font-size': 24}, 1000).fadeOut(1000);
         });
     });
     
@@ -285,7 +291,6 @@
     });
     
     Do('lightBox', function(){
-        $(document).ready(function(){
         $('#demo3 a').lightBox({
             imageLoading:           'assets/lightbox-ico-loading.gif',
             imageBtnPrev:           'assets/lightbox-btn-prev.gif',
@@ -293,8 +298,6 @@
             imageBtnClose:          'assets/lightbox-btn-close.gif',
             imageBlank:             'assets/lightbox-blank.gif'
         });
-        
-      });
     });
 
     Do.css([
@@ -319,6 +322,7 @@
       (new Image()).src = 'http://l.yimg.com/k/im_siggDVgPxPixvlQV4MVirM_uYg---y526-x620-q75-n0/ygrammys/us/img/6f/ff/2250599110_2821831301.jpg';
       (new Image()).src = 'http://i1.sinaimg.cn/ent/y/p/2008-10-26/U1819P28T3D2221584F326DT20081026023532.jpg';
     });
+
     </script>
 </body>
 </html>
