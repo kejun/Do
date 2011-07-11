@@ -1,6 +1,6 @@
 /* Do version 2.0 pre
  * creator: kejun (listenpro@gmail.com)
- * 最新更新：2011-5-16
+ * 最新更新：2011-7-12
  */
 
 (function(win, doc) {
@@ -64,6 +64,15 @@ isArray = function(e) {
   return e.constructor === Array; 
 },
 
+getMod = function(e) {
+ var mods = config.mods, mod; 
+ if (typeof e === 'string') {
+   mod = (mods[e])? mods[e] : { path: e };
+ } else {
+   mod = e;
+ }
+ return mod;
+},
 
 load = function(url, type, charset, cb) {
     var wait, n, t, img, 
@@ -157,9 +166,7 @@ load = function(url, type, charset, cb) {
       };
     }
 
-    setTimeout(function(){
-      jsSelf.parentNode.insertBefore(n, jsSelf);
-    }, 0);
+    jsSelf.parentNode.insertBefore(n, jsSelf);
 },
 
 // 加载依赖论文件(顺序)
@@ -183,7 +190,7 @@ loadDeps = function(deps, cb) {
   }
 
   for (; m = deps[i++]; ) {
-    mod = (mods[m])? mods[m] : { path: m };
+    mod = getMod(m);
     if (mod.requires) {
       loadDeps(mod.requires, (function(mod){
         return function(){
@@ -256,29 +263,25 @@ fireReadyList = function() {
 },
 
 d = function() {
-  var args = [].slice.call(arguments), 
-  mods = config.mods, fn, list, id, len, i = 0, m, mod;
+  var args = [].slice.call(arguments), fn, id;
 
   // 加载核心库
-  if (config.autoLoad) {
-    if (!loadList[config.coreLib.join('')]) {
-      loadDeps(config.coreLib, function(){
-        d.apply(null, args);
-      });
-      return;
-    }
+  if (config.autoLoad &&
+    !loadList[config.coreLib.join('')]) {
+    loadDeps(config.coreLib, function(){
+      d.apply(null, args);
+    });
+    return;
   }
 
-  // 加载核心库
-  if (globalList.length > 0) {
-    if (!loadList[globalList.join('')]) {
-      loadDeps(globalList, function(){
-        d.apply(null, args);
-      });
-      return;
-    }
+  // 加载全局库
+  if (globalList.length > 0 &&
+    !loadList[globalList.join('')]) {
+    loadDeps(globalList, function(){
+      d.apply(null, args);
+    });
+    return;
   }
-
 
   if (typeof args[args.length - 1] === 'function' ) {
     fn = args.pop();
@@ -286,33 +289,15 @@ d = function() {
 
   id = args.join('');
 
-
   if ((args.length === 0 || loadList[id]) && fn) {
     fn();
     return;
   }
 
-  len = args.length;
-
-  function callback() {
-    if (!--len) {
-      loadList[id] = 1;
-      fn && fn();
-    }
-  };
-
-  for (; m = args[i++]; ) {
-    mod = (mods[m])? mods[m] : { path: m };
-    if (mod.requires) {
-      loadDeps(mod.requires, (function(mod){
-        return function(){
-          load(mod.path, mod.type, mod.charset, callback);
-        };
-      })(mod));
-    } else {
-      load(mod.path, mod.type, mod.charset, callback);
-    }
-  }
+  loadDeps(args, function() {
+    loadList[id] = 1;
+    fn && fn();
+  });
 };
 
 d.add = function(sName, oConfig) {
