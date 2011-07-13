@@ -208,8 +208,8 @@
       // 1.加载超时
       Do.setConfig('timeout', 3000);
 
-      // 2.超时的fallback回调
-      Do.setConfig('fallback', function(url){
+      // 2.超时回调
+      Do.setConfig('timeoutCallback', function(url){
         // log timeout file.
       });
 

@@ -106,13 +106,13 @@ load = function(url, type, charset, cb) {
     loadingFiles[url] = true;
 
     wait = win.setTimeout(function() {
-    /* 目前fallback处理，超时后如果有fallback回调，执行回调，然后继续等
-     * fallback的意义是log延时长的URI，这个处理不属于加载器本身的功能移到外部
+    /* 目前延时回调处理，超时后如果有延时回调，执行回调，然后继续等
+     * 延时回调的意义是log延时长的URI，这个处理不属于加载器本身的功能移到外部
      * 没有跳过是为了避免错误。
      */
-      if (config.fallback) {
+      if (config.timeoutCallback) {
         try {
-          eval(config.fallback)(url); 
+          config.timeoutCallback(url); 
         } catch(ex) {}
       }
     }, config.timeout);
@@ -147,8 +147,8 @@ load = function(url, type, charset, cb) {
       // firefox, safari, chrome, ie9下加载失败触发
       // 如果文件是404, 会比timeout早触发onerror。目前不处理404，只处理超时
       n.onerror = function() {
-       done();
-       n.onerror = null;
+        done();
+        n.onerror = null;
       };
 
       // ie6~8通过创建vbscript可以识别是否加载成功。
@@ -156,194 +156,194 @@ load = function(url, type, charset, cb) {
 
       // ie6~9下加载成功或失败，firefox, safari, opera下加载成功触发
       n.onload = n.onreadystatechange = function() {
-          var url;
-          if (!this.readyState ||
-              this.readyState === 'loaded' ||
-              this.readyState === 'complete') {
-            done();
-            n.onload = n.onreadystatechange = null;
-          }
+        var url;
+        if (!this.readyState ||
+            this.readyState === 'loaded' ||
+            this.readyState === 'complete') {
+          done();
+          n.onload = n.onreadystatechange = null;
+        }
       };
     }
 
     jsSelf.parentNode.insertBefore(n, jsSelf);
 },
 
-// 加载依赖论文件(顺序)
-loadDeps = function(deps, cb) {
-  var mods = config.mods, 
-  id, m, mod, i = 0, len;
+  // 加载依赖论文件(顺序)
+  loadDeps = function(deps, cb) {
+    var mods = config.mods, 
+    id, m, mod, i = 0, len;
 
-  id = deps.join('');
-  len = deps.length;
+    id = deps.join('');
+    len = deps.length;
 
-  if (loadList[id]) {
-    cb();
-    return;
-  }
-
-  function callback() {
-    if(!--len) {
-      loadList[id] = 1;
+    if (loadList[id]) {
       cb();
+      return;
     }
-  }
 
-  for (; m = deps[i++]; ) {
-    mod = getMod(m);
-    if (mod.requires) {
-      loadDeps(mod.requires, (function(mod){
-        return function(){
-          load(mod.path, mod.type, mod.charset, callback);
-        };
-      })(mod));
-    } else {
-      load(mod.path, mod.type, mod.charset, callback);
-    }
-  }
-},
-
-/*!
-* contentloaded.js
-*
-* Author: Diego Perini (diego.perini at gmail.com)
-* Summary: cross-browser wrapper for DOMContentLoaded
-* Updated: 20101020
-* License: MIT
-* Version: 1.2
-*
-* URL:
-* http://javascript.nwbox.com/ContentLoaded/
-* http://javascript.nwbox.com/ContentLoaded/MIT-LICENSE
-*
-*/
-
-// @win window reference
-// @fn function reference
-contentLoaded = function(fn) {
-  var done = false, top = true, 
-  doc = win.document, 
-  root = doc.documentElement,
-  add = doc.addEventListener ? 'addEventListener' : 'attachEvent',
-  rem = doc.addEventListener ? 'removeEventListener' : 'detachEvent',
-  pre = doc.addEventListener ? '' : 'on',
-
-  init = function(e) {
-    if (e.type == 'readystatechange' && doc.readyState != 'complete') return;
-    (e.type == 'load' ? win : doc)[rem](pre + e.type, init, false);
-    if (!done && (done = true)) fn.call(win, e.type || e);
-  },
-
-  poll = function() {
-    try { root.doScroll('left'); } catch(e) { setTimeout(poll, 50); return; }
-    init('poll');
-  };
-
-  if (doc.readyState == 'complete') fn.call(win, 'lazy');
-  else {
-    if (doc.createEventObject && root.doScroll) {
-      try { top = !win.frameElement; } catch(e) { }
-      if (top) {
-       poll();
+    function callback() {
+      if(!--len) {
+        loadList[id] = 1;
+        cb();
       }
     }
-    doc[add](pre + 'DOMContentLoaded', init, false);
-    doc[add](pre + 'readystatechange', init, false);
-    win[add](pre + 'load', init, false);
-  }
-},
 
-fireReadyList = function() {
-  var i = 0, list;
-  if (readyList.length) {
-    for(; list = readyList[i++]; ) {
-      d.apply(this, list);
+    for (; m = deps[i++]; ) {
+      mod = getMod(m);
+      if (mod.requires) {
+        loadDeps(mod.requires, (function(mod){
+              return function(){
+              load(mod.path, mod.type, mod.charset, callback);
+              };
+              })(mod));
+      } else {
+        load(mod.path, mod.type, mod.charset, callback);
+      }
     }
-  }
-},
+  },
 
-d = function() {
-  var args = [].slice.call(arguments), fn, id;
+  /*!
+   * contentloaded.js
+   *
+   * Author: Diego Perini (diego.perini at gmail.com)
+   * Summary: cross-browser wrapper for DOMContentLoaded
+   * Updated: 20101020
+   * License: MIT
+   * Version: 1.2
+   *
+   * URL:
+   * http://javascript.nwbox.com/ContentLoaded/
+   * http://javascript.nwbox.com/ContentLoaded/MIT-LICENSE
+   *
+   */
 
-  // 加载核心库
-  if (config.autoLoad &&
-    !loadList[config.coreLib.join('')]) {
-    loadDeps(config.coreLib, function(){
-      d.apply(null, args);
-    });
-    return;
-  }
+  // @win window reference
+  // @fn function reference
+  contentLoaded = function(fn) {
+    var done = false, top = true, 
+    doc = win.document, 
+    root = doc.documentElement,
+    add = doc.addEventListener ? 'addEventListener' : 'attachEvent',
+    rem = doc.addEventListener ? 'removeEventListener' : 'detachEvent',
+    pre = doc.addEventListener ? '' : 'on',
 
-  // 加载全局库
-  if (globalList.length > 0 &&
-    !loadList[globalList.join('')]) {
-    loadDeps(globalList, function(){
-      d.apply(null, args);
-    });
-    return;
-  }
+    init = function(e) {
+      if (e.type == 'readystatechange' && doc.readyState != 'complete') return;
+      (e.type == 'load' ? win : doc)[rem](pre + e.type, init, false);
+      if (!done && (done = true)) fn.call(win, e.type || e);
+    },
 
-  if (typeof args[args.length - 1] === 'function' ) {
-    fn = args.pop();
-  }
+    poll = function() {
+      try { root.doScroll('left'); } catch(e) { setTimeout(poll, 50); return; }
+      init('poll');
+    };
 
-  id = args.join('');
+    if (doc.readyState == 'complete') fn.call(win, 'lazy');
+    else {
+      if (doc.createEventObject && root.doScroll) {
+        try { top = !win.frameElement; } catch(e) { }
+        if (top) {
+          poll();
+        }
+      }
+      doc[add](pre + 'DOMContentLoaded', init, false);
+      doc[add](pre + 'readystatechange', init, false);
+      win[add](pre + 'load', init, false);
+    }
+  },
 
-  if ((args.length === 0 || loadList[id]) && fn) {
-    fn();
-    return;
-  }
+  fireReadyList = function() {
+    var i = 0, list;
+    if (readyList.length) {
+      for(; list = readyList[i++]; ) {
+        d.apply(this, list);
+      }
+    }
+  },
 
-  loadDeps(args, function() {
-    loadList[id] = 1;
-    fn && fn();
-  });
-};
+  d = function() {
+    var args = [].slice.call(arguments), fn, id;
+
+    // 加载核心库
+    if (config.autoLoad &&
+        !loadList[config.coreLib.join('')]) {
+      loadDeps(config.coreLib, function(){
+          d.apply(null, args);
+          });
+      return;
+    }
+
+    // 加载全局库
+    if (globalList.length > 0 &&
+        !loadList[globalList.join('')]) {
+      loadDeps(globalList, function(){
+          d.apply(null, args);
+          });
+      return;
+    }
+
+    if (typeof args[args.length - 1] === 'function' ) {
+      fn = args.pop();
+    }
+
+    id = args.join('');
+
+    if ((args.length === 0 || loadList[id]) && fn) {
+      fn();
+      return;
+    }
+
+    loadDeps(args, function() {
+        loadList[id] = 1;
+        fn && fn();
+        });
+  };
 
 d.add = function(sName, oConfig) {
-    if (!sName || !oConfig || !oConfig.path) {
-        return;
-    }
-    config.mods[sName] = oConfig;
+  if (!sName || !oConfig || !oConfig.path) {
+    return;
+  }
+  config.mods[sName] = oConfig;
 };
 
 d.delay = function() {
-   var args = [].slice.call(arguments), delay = args.shift();
-   win.setTimeout(function() {
-     d.apply(this, args);
-   }, delay);
+  var args = [].slice.call(arguments), delay = args.shift();
+  win.setTimeout(function() {
+      d.apply(this, args);
+      }, delay);
 };
 
 d.global = function() {
-   var args = isArray(arguments[0])? arguments[0] : [].slice.call(arguments);
-   globalList = globalList.concat(args);
+  var args = isArray(arguments[0])? arguments[0] : [].slice.call(arguments);
+  globalList = globalList.concat(args);
 };
 
 d.ready = function() {
-    var args = [].slice.call(arguments);
-    if (isReady) {
-      return d.apply(this, args);
-    }
-    readyList.push(args);
+  var args = [].slice.call(arguments);
+  if (isReady) {
+    return d.apply(this, args);
+  }
+  readyList.push(args);
 };
 
 d.css = function(s) {
- var css = doc.getElementById('do-inline-css');
- if (!css) {
-   css = doc.createElement('style');
-   css.type = 'text/css';
-   css.id = 'do-inline-css';
-   jsSelf.parentNode.insertBefore(css, jsSelf);
- }
+  var css = doc.getElementById('do-inline-css');
+  if (!css) {
+    css = doc.createElement('style');
+    css.type = 'text/css';
+    css.id = 'do-inline-css';
+    jsSelf.parentNode.insertBefore(css, jsSelf);
+  }
 
- if (css.styleSheet) {
-   css.styleSheet.cssText = css.styleSheet.cssText + s;
- } else {
-   css.appendChild(doc.createTextNode(s));
- }
+  if (css.styleSheet) {
+    css.styleSheet.cssText = css.styleSheet.cssText + s;
+  } else {
+    css.appendChild(doc.createTextNode(s));
+  }
 };
 
-d.set = d.setPublicData = function(prop, value) {
+d.setData = d.setPublicData = function(prop, value) {
   var cbStack = publicDataStack[prop];
 
   publicData[prop] = value;
@@ -357,19 +357,19 @@ d.set = d.setPublicData = function(prop, value) {
   }
 };
 
-d.get = d.getPublicData = function(prop, cb) {
+d.getData = d.getPublicData = function(prop, cb) {
   if (publicData[prop]) {
     cb(publicData[prop]);
     return;
   } 
 
   if (!publicDataStack[prop]) {
-     publicDataStack[prop] = [];
+    publicDataStack[prop] = [];
   }
 
   publicDataStack[prop].push(function(value){
-    cb(value);
-  });
+      cb(value);
+      });
 };
 
 d.setConfig = function(n, v) {
