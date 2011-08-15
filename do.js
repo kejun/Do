@@ -117,7 +117,7 @@ load = function(url, type, charset, cb) {
       }
     }, config.timeout);
 
-    t =  type || url.toLowerCase().substring(url.lastIndexOf('.') + 1);
+    t =  type || url.toLowerCase().split(/\./).pop().replace(/[\?#].*/, '');
 
     if (t === 'js') {
       n = doc.createElement('script');
